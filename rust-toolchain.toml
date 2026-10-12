@@ -1,4 +1,7 @@
 # eframe/egui 0.36 and sysinfo 0.39 need rustc >= 1.95; pin the toolchain so
 # a plain `cargo run` picks it up even when the default stable is older.
+# The targets are the ones the release workflow cross-compiles: rustup keeps
+# them per toolchain, so they must be re-declared for the pin.
 [toolchain]
 channel = "1.95"
+targets = ["aarch64-apple-darwin", "x86_64-apple-darwin", "x86_64-unknown-linux-musl", "aarch64-unknown-linux-musl"]
