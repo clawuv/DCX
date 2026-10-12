@@ -49,7 +49,7 @@ pub fn analyze(tree: &Tree, prepared: &Prepared, ep: &Endpoint, rules: &Rules) -
     let body = serde_json::to_string(&prepared.payload).map_err(|e| e.to_string())?;
     let mut req = ureq::post(url)
         .header("Content-Type", "application/json")
-        .header("User-Agent", concat!("SquirrelDisk/", env!("CARGO_PKG_VERSION")));
+        .header("User-Agent", concat!("DCX/", env!("CARGO_PKG_VERSION")));
     if let Some(tok) = ep.token.as_deref().filter(|t| !t.is_empty()) {
         req = req.header("Authorization", &format!("Bearer {tok}"));
     }

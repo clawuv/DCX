@@ -1,5 +1,5 @@
 // The app is a GUI program on Windows; the headless build stays a console
-// one (it becomes `squirreldisk.com`, see `console_shim`).
+// one (it becomes `dcx.com`, see `console_shim`).
 #![cfg_attr(all(windows, feature = "gui", not(debug_assertions)), windows_subsystem = "windows")]
 #![cfg_attr(not(feature = "gui"), allow(dead_code))]
 
@@ -67,7 +67,7 @@ fn main() {
     // `-psn_…` argument, hence skipping flags).
     let folder = args.iter().find(|a| !a.starts_with('-')).map(|a| cli::absolute(std::path::Path::new(a)));
     if let Some(f) = folder.as_ref().filter(|f| !f.is_dir()) {
-        eprintln!("squirreldisk: {}: not a folder\n\n{}", f.display(), cli::USAGE);
+        eprintln!("dcx: {}: not a folder\n\n{}", f.display(), cli::USAGE);
         std::process::exit(2);
     }
     #[cfg(feature = "gui")]
@@ -79,13 +79,13 @@ fn main() {
     #[cfg(not(feature = "gui"))]
     {
         let _ = folder;
-        eprintln!("This is the headless SquirrelDisk build: it has no window.\n\n{}", cli::USAGE);
+        eprintln!("This is the headless DCX build: it has no window.\n\n{}", cli::USAGE);
         std::process::exit(2);
     }
 }
 
-/// `squirreldisk.com`, installed next to `squirreldisk.exe` and on the PATH:
-/// typed in a terminal, `squirreldisk` finds it first (PATHEXT lists .COM
+/// `dcx.com`, installed next to `dcx.exe` and on the PATH:
+/// typed in a terminal, `dcx` finds it first (PATHEXT lists .COM
 /// before .EXE). The .exe is a GUI program, which terminals neither wait for
 /// nor show the output of; this console build runs it with the terminal's
 /// handles instead, waiting for it only for command-line work. All the logic
@@ -101,7 +101,7 @@ fn console_shim(args: &[String]) -> Option<i32> {
     let mut cmd = Command::new(&exe);
     cmd.args(args);
     let fail = |e: std::io::Error| {
-        eprintln!("squirreldisk: can't run {}: {e}", exe.display());
+        eprintln!("dcx: can't run {}: {e}", exe.display());
         1
     };
     Some(if cli::handles(args) || args.first().is_some_and(|a| a == "--agent") {
@@ -113,13 +113,13 @@ fn console_shim(args: &[String]) -> Option<i32> {
     })
 }
 
-/// `squirreldisk [folder]` typed in a terminal: start the app on its own
+/// `dcx [folder]` typed in a terminal: start the app on its own
 /// and give the terminal back, as other GUI apps do.
 #[cfg(all(unix, feature = "gui"))]
 fn detach_from_terminal(args: &[String]) {
     use std::io::IsTerminal;
     use std::os::unix::process::CommandExt;
-    const DETACHED: &str = "SQUIRRELDISK_DETACHED";
+    const DETACHED: &str = "DCX_DETACHED";
     if !std::io::stdin().is_terminal() || std::env::var_os(DETACHED).is_some() {
         return;
     }
@@ -152,7 +152,7 @@ fn run_gui(folder: Option<std::path::PathBuf>) {
     use eframe::egui;
     let icon = app_icon();
     let mut viewport = egui::ViewportBuilder::default()
-        .with_title("SquirrelDisk")
+        .with_title("DCX")
         .with_inner_size([1180.0, 760.0])
         .with_min_inner_size([860.0, 560.0])
         .with_drag_and_drop(true)
@@ -175,12 +175,12 @@ fn run_gui(folder: Option<std::path::PathBuf>) {
     }
     // centred at the default size; the app then sizes it to the screen
     let options = eframe::NativeOptions { viewport, multisampling: 0, centered: true, ..Default::default() };
-    if let Err(e) = eframe::run_native("SquirrelDisk", options, Box::new(|cc| {
+    if let Err(e) = eframe::run_native("DCX", options, Box::new(|cc| {
         let mut app = ui::app::App::new(cc);
         app.open_at_start = folder;
         Ok(Box::new(app))
     })) {
-        eprintln!("SquirrelDisk failed to start: {e}");
+        eprintln!("DCX failed to start: {e}");
         std::process::exit(1);
     }
 }

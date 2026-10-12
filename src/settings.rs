@@ -13,10 +13,10 @@ pub fn home_dir() -> Option<PathBuf> {
 }
 
 /// A config folder chosen by the user instead of the system one:
-/// `SQUIRRELDISK_CONFIG_DIR`, or a `portable` folder next to the executable
+/// `DCX_CONFIG_DIR`, or a `portable` folder next to the executable
 /// (next to the AppImage file, not inside its mount).
 pub fn portable_dir() -> Option<PathBuf> {
-    if let Some(d) = std::env::var_os("SQUIRRELDISK_CONFIG_DIR").filter(|d| !d.is_empty()) {
+    if let Some(d) = std::env::var_os("DCX_CONFIG_DIR").filter(|d| !d.is_empty()) {
         return Some(PathBuf::from(d));
     }
     let exe = std::env::var_os("APPIMAGE").map(PathBuf::from).filter(|p| p.is_file()).or_else(|| std::env::current_exe().ok())?;
@@ -29,18 +29,18 @@ pub fn config_dir() -> Option<PathBuf> {
     }
     #[cfg(target_os = "macos")]
     {
-        home_dir().map(|h| h.join("Library/Application Support/SquirrelDisk"))
+        home_dir().map(|h| h.join("Library/Application Support/DCX"))
     }
     #[cfg(windows)]
     {
-        std::env::var_os("APPDATA").map(|a| PathBuf::from(a).join("SquirrelDisk"))
+        std::env::var_os("APPDATA").map(|a| PathBuf::from(a).join("DCX"))
     }
     #[cfg(all(unix, not(target_os = "macos")))]
     {
         std::env::var_os("XDG_CONFIG_HOME")
             .map(PathBuf::from)
             .or_else(|| home_dir().map(|h| h.join(".config")))
-            .map(|c| c.join("squirreldisk"))
+            .map(|c| c.join("dcx"))
     }
 }
 
@@ -68,9 +68,9 @@ pub struct Settings {
     pub personalized_sponsors: bool,
     /// Send anonymous daily view totals / count clicks.
     pub sponsor_measurement: bool,
-    /// "Scan with SquirrelDisk" in the file manager's menu for folders.
+    /// "Scan with DCX" in the file manager's menu for folders.
     pub folder_menu: bool,
-    /// The `squirreldisk` command was set up (or tried) at first launch.
+    /// The `dcx` command was set up (or tried) at first launch.
     pub cli_offered: bool,
     /// Show local cleanup suggestions in the side panel.
     pub suggestions: bool,
@@ -113,9 +113,9 @@ impl Default for Settings {
             analysis_min_size_mb: 50,
             sidebar: true,
             ai_cloud: false,
-            ai_endpoint: "https://api.squirreldisk.com/v1/analyze".into(),
+            ai_endpoint: "https://api.dcx.com/v1/analyze".into(),
             ai_token: String::new(),
-            ai_subscribe_url: "https://squirreldisk.com/ai".into(),
+            ai_subscribe_url: "https://dcx.com/ai".into(),
         }
     }
 }

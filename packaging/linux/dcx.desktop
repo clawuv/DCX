@@ -1,8 +1,8 @@
 [Desktop Entry]
 Type=Application
-Name=SquirrelDisk
+Name=DCX
 Comment=See what's using your disk space and clean it up
-Exec=squirreldisk
-Icon=squirreldisk
+Exec=dcx
+Icon=dcx
 Categories=Utility;System;FileTools;
 Terminal=false

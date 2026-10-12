@@ -127,7 +127,7 @@ fn run(items: &[Item], mode: &Mode, source: &Source, root: &str, p: &DeleteProgr
     }
     let backup_root = match mode {
         Mode::BackupFolder(dest) => {
-            let d = dest.join(format!("SquirrelDisk Backup {}", timestamp()));
+            let d = dest.join(format!("DCX Backup {}", timestamp()));
             *p.backup_location.lock().unwrap() = Some(d.to_string_lossy().into_owned());
             Some(d)
         }
@@ -161,7 +161,7 @@ fn run(items: &[Item], mode: &Mode, source: &Source, root: &str, p: &DeleteProgr
                 Mode::BackupRclone(remote) => {
                     p.set_phase("Uploading backup");
                     let rel = relative_for_backup(&item.path, root);
-                    let dest = format!("{}/SquirrelDisk Backup {}/{}", remote.trim_end_matches('/'), timestamp_day(), rel.to_string_lossy().replace('\\', "/"));
+                    let dest = format!("{}/DCX Backup {}/{}", remote.trim_end_matches('/'), timestamp_day(), rel.to_string_lossy().replace('\\', "/"));
                     *p.backup_location.lock().unwrap() = Some(dest.clone());
                     backup_rclone(source, &item.path, &dest)?;
                     p.done_bytes.fetch_add(item.size, Ordering::Relaxed);

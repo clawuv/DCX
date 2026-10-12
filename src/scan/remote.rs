@@ -9,7 +9,7 @@ use std::sync::atomic::Ordering;
 use std::sync::{Arc, RwLock};
 use std::time::{Duration, Instant};
 
-pub const AGENT_DIR: &str = "~/.cache/squirreldisk";
+pub const AGENT_DIR: &str = "~/.cache/dcx";
 
 pub fn agent_path() -> String {
     format!("{AGENT_DIR}/agent-{}", env!("CARGO_PKG_VERSION"))
@@ -22,7 +22,7 @@ pub fn sh_quote(s: &str) -> String {
 
 /// Env var through which the app hands a passphrase/password to itself when
 /// ssh runs it as `SSH_ASKPASS` helper (see `main.rs`).
-pub const ASKPASS_ENV: &str = "SQUIRRELDISK_ASKPASS_SECRET";
+pub const ASKPASS_ENV: &str = "DCX_ASKPASS_SECRET";
 
 fn secrets() -> &'static std::sync::Mutex<std::collections::HashMap<String, String>> {
     static S: std::sync::OnceLock<std::sync::Mutex<std::collections::HashMap<String, String>>> = std::sync::OnceLock::new();
@@ -145,7 +145,7 @@ fn prepare_ssh(host: &str, progress: &Progress) -> Result<Method, String> {
         if flags.contains(&"HAVE_CURL") {
             progress.set_status("Installing agent");
             let url = format!(
-                "https://github.com/{}/releases/download/v{}/squirreldisk-agent-{}",
+                "https://github.com/{}/releases/download/v{}/dcx-agent-{}",
                 crate::GITHUB_REPO,
                 env!("CARGO_PKG_VERSION"),
                 target

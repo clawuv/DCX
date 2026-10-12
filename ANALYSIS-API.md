@@ -6,7 +6,7 @@ only calls it after the user sees a preview of exactly what will be sent.
 
 - **Method / path:** `POST {base}/v1/analyze`
 - **Content-Type:** `application/json`
-- **User-Agent:** `SquirrelDisk/<version>`
+- **User-Agent:** `DCX/<version>`
 - **Authorization:** `Bearer <token>` (optional; used for paid plans)
 
 The exact bytes sent are produced by `src/analyze/payload.rs` — that file is the

@@ -348,9 +348,9 @@ pub struct App {
     pub font_scripts: u32,
     /// Frames spent placing the window on the screen (done at 255).
     pub placing: u8,
-    /// Folder to scan once the window is up (`squirreldisk <folder>`).
+    /// Folder to scan once the window is up (`dcx <folder>`).
     pub open_at_start: Option<PathBuf>,
-    /// Installing the `squirreldisk` command from Settings: the outcome.
+    /// Installing the `dcx` command from Settings: the outcome.
     pub cli_job: Option<Arc<Mutex<Option<Result<(), String>>>>>,
 }
 
@@ -424,10 +424,10 @@ pub fn install_fonts(ctx: &egui::Context, lang: &str, all_scripts: bool) {
 impl App {
     pub fn new(cc: &eframe::CreationContext<'_>) -> Self {
         let mut settings = Settings::load();
-        if let Ok(style) = std::env::var("SQUIRRELDISK_CHART") {
+        if let Ok(style) = std::env::var("DCX_CHART") {
             settings.chart_style = style;
         }
-        let lang = crate::i18n::resolve(&std::env::var("SQUIRRELDISK_LANG").unwrap_or_else(|_| settings.language.clone()));
+        let lang = crate::i18n::resolve(&std::env::var("DCX_LANG").unwrap_or_else(|_| settings.language.clone()));
         crate::i18n::set_language(lang);
         install_fonts(&cc.egui_ctx, lang, false);
         let theme = theme::by_name(&settings.theme);
@@ -437,7 +437,7 @@ impl App {
             None => (None, Some("no OpenGL context".into())),
         };
         if let Some(e) = &gl_error {
-            eprintln!("SquirrelDisk: falling back to CPU rendering: {e}");
+            eprintln!("DCX: falling back to CPU rendering: {e}");
         }
         let rclone = Arc::new(Mutex::new(RcloneState::Looking));
         refresh_rclone(&rclone, &cc.egui_ctx);
@@ -446,7 +446,7 @@ impl App {
             updater.check(cc.egui_ctx.clone());
         }
         // system hooks: keep the folder menu pointing at this copy of the
-        // app, and set up the `squirreldisk` command once
+        // app, and set up the `dcx` command once
         if !scan::demo::enabled() {
             if settings.folder_menu {
                 let _ = super::integration::set_folder_menu(true);

@@ -12,7 +12,7 @@ fn exe_name() -> &'static str {
     if cfg!(windows) { "rclone.exe" } else { "rclone" }
 }
 
-/// Where SquirrelDisk keeps its own copy of rclone.
+/// Where DCX keeps its own copy of rclone.
 pub fn managed_dir() -> Option<PathBuf> {
     if let Some(d) = std::env::var_os("SQD_RCLONE_HOME") {
         return Some(PathBuf::from(d));
@@ -162,7 +162,7 @@ pub fn open_config_terminal() -> Result<(), String> {
     #[cfg(target_os = "macos")]
     {
         // a .command file opens in Terminal without needing Automation permission
-        let f = std::env::temp_dir().join("squirreldisk-rclone-config.command");
+        let f = std::env::temp_dir().join("dcx-rclone-config.command");
         let q = |s: &str| format!("'{}'", s.replace('\'', "'\\''"));
         let extra: String = conf.iter().map(|a| format!(" {}", q(a))).collect();
         std::fs::write(&f, format!("#!/bin/sh\nclear\n{} config{extra}\n", q(&bin.to_string_lossy()))).map_err(|e| e.to_string())?;
@@ -417,7 +417,7 @@ mod tasks {
     fn agent() -> ureq::Agent {
         ureq::Agent::config_builder()
             .timeout_connect(Some(std::time::Duration::from_secs(15)))
-            .user_agent(concat!("SquirrelDisk/", env!("CARGO_PKG_VERSION")))
+            .user_agent(concat!("DCX/", env!("CARGO_PKG_VERSION")))
             .build()
             .into()
     }
@@ -572,10 +572,10 @@ mod portable_tests {
         assert_eq!(rclone_config(&super::command()), Some(portable.join("rclone.conf")));
 
         let custom = std::env::temp_dir().join("sqd-portable-test");
-        std::env::set_var("SQUIRRELDISK_CONFIG_DIR", &custom);
+        std::env::set_var("DCX_CONFIG_DIR", &custom);
         assert_eq!(crate::settings::config_dir(), Some(custom.clone()));
         assert_eq!(rclone_config(&super::command()), Some(custom.join("rclone.conf")));
-        std::env::remove_var("SQUIRRELDISK_CONFIG_DIR");
+        std::env::remove_var("DCX_CONFIG_DIR");
 
         std::fs::remove_dir(&portable).unwrap();
         assert_ne!(crate::settings::config_dir(), Some(portable));

@@ -1,48 +1,48 @@
 <!--
   Per-user MSI (no admin rights needed; lets the built-in updater replace the exe).
-  Build (WiX 5):  wix build packaging/windows/squirreldisk.wxs -arch x64
-                  -d Version=2.0.1 -d ExePath=target\release\squirreldisk.exe
-                  -d ComPath=squirreldisk.com -o SquirrelDisk-Windows.msi
+  Build (WiX 5):  wix build packaging/windows/dcx.wxs -arch x64
+                  -d Version=2.0.1 -d ExePath=target\release\dcx.exe
+                  -d ComPath=dcx.com -o DCX-Windows.msi
   ComPath is the headless build (without the "gui" feature), a console
-  program: typed in a terminal, `squirreldisk` finds it first and it runs the
+  program: typed in a terminal, `dcx` finds it first and it runs the
   .exe with the terminal attached (see console_shim in src/main.rs).
 -->
 <Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
-  <Package Name="SquirrelDisk"
-           Manufacturer="SquirrelDisk"
+  <Package Name="DCX"
+           Manufacturer="DCX"
            Version="$(Version)"
            UpgradeCode="6f1d2c64-9a3b-4f7e-8c55-2b7d9e1a4c10"
            Scope="perUser"
            Compressed="yes">
-    <MajorUpgrade DowngradeErrorMessage="A newer version of SquirrelDisk is already installed." />
+    <MajorUpgrade DowngradeErrorMessage="A newer version of DCX is already installed." />
     <MediaTemplate EmbedCab="yes" />
 
-    <Icon Id="AppIcon" SourceFile="assets\icon\SquirrelDisk.ico" />
+    <Icon Id="AppIcon" SourceFile="assets\icon\DCX.ico" />
     <Property Id="ARPPRODUCTICON" Value="AppIcon" />
-    <Property Id="ARPURLINFOABOUT" Value="https://squirreldisk.com" />
-    <Property Id="ARPHELPLINK" Value="https://github.com/adileo/squirreldisk/issues" />
+    <Property Id="ARPURLINFOABOUT" Value="https://dcx.com" />
+    <Property Id="ARPHELPLINK" Value="https://github.com/adileo/dcx/issues" />
 
     <StandardDirectory Id="LocalAppDataFolder">
       <Directory Id="ProgramsFolder" Name="Programs">
-        <Directory Id="INSTALLFOLDER" Name="SquirrelDisk">
+        <Directory Id="INSTALLFOLDER" Name="DCX">
           <Component Id="MainExecutable" Guid="3c7e9b1a-5d2f-4a8e-9f61-0b4c2d7e8a95">
-            <File Id="SquirrelDiskExe" Name="squirreldisk.exe" Source="$(ExePath)" />
-            <RegistryValue Root="HKCU" Key="Software\SquirrelDisk" Name="InstallDir" Type="string" Value="[INSTALLFOLDER]" KeyPath="yes" />
+            <File Id="DCXExe" Name="dcx.exe" Source="$(ExePath)" />
+            <RegistryValue Root="HKCU" Key="Software\DCX" Name="InstallDir" Type="string" Value="[INSTALLFOLDER]" KeyPath="yes" />
             <RemoveFolder Id="RemoveInstallFolder" On="uninstall" />
             <RemoveFolder Id="RemoveProgramsFolder" Directory="ProgramsFolder" On="uninstall" />
           </Component>
-          <!-- The `squirreldisk` command: the console shim, and this folder on the user's PATH -->
+          <!-- The `dcx` command: the console shim, and this folder on the user's PATH -->
           <Component Id="CommandLine" Guid="b7e4a1c2-6d3f-4f8a-9e25-1c0d8b3f6a47">
-            <File Id="SquirrelDiskCom" Name="squirreldisk.com" Source="$(ComPath)" />
+            <File Id="DCXCom" Name="dcx.com" Source="$(ComPath)" />
             <Environment Id="UserPath" Name="PATH" Value="[INSTALLFOLDER]" Part="last" Action="set" System="no" Permanent="no" />
-            <RegistryValue Root="HKCU" Key="Software\SquirrelDisk" Name="CommandLine" Type="integer" Value="1" KeyPath="yes" />
+            <RegistryValue Root="HKCU" Key="Software\DCX" Name="CommandLine" Type="integer" Value="1" KeyPath="yes" />
           </Component>
-          <!-- "Scan with SquirrelDisk", added by the app when turned on in Settings -->
+          <!-- "Scan with DCX", added by the app when turned on in Settings -->
           <Component Id="FolderMenuCleanup" Guid="4f2c9d81-3a6e-4b17-8d50-7e9a2c1b5f63">
-            <RemoveRegistryKey Id="RemoveDirMenu" Root="HKCU" Key="Software\Classes\Directory\shell\SquirrelDisk" Action="removeOnUninstall" />
-            <RemoveRegistryKey Id="RemoveDirBgMenu" Root="HKCU" Key="Software\Classes\Directory\Background\shell\SquirrelDisk" Action="removeOnUninstall" />
-            <RemoveRegistryKey Id="RemoveDriveMenu" Root="HKCU" Key="Software\Classes\Drive\shell\SquirrelDisk" Action="removeOnUninstall" />
-            <RegistryValue Root="HKCU" Key="Software\SquirrelDisk" Name="FolderMenuCleanup" Type="integer" Value="1" KeyPath="yes" />
+            <RemoveRegistryKey Id="RemoveDirMenu" Root="HKCU" Key="Software\Classes\Directory\shell\DCX" Action="removeOnUninstall" />
+            <RemoveRegistryKey Id="RemoveDirBgMenu" Root="HKCU" Key="Software\Classes\Directory\Background\shell\DCX" Action="removeOnUninstall" />
+            <RemoveRegistryKey Id="RemoveDriveMenu" Root="HKCU" Key="Software\Classes\Drive\shell\DCX" Action="removeOnUninstall" />
+            <RegistryValue Root="HKCU" Key="Software\DCX" Name="FolderMenuCleanup" Type="integer" Value="1" KeyPath="yes" />
           </Component>
         </Directory>
       </Directory>
@@ -50,13 +50,13 @@
 
     <StandardDirectory Id="ProgramMenuFolder">
       <Component Id="StartMenuShortcut" Guid="8a2f6d40-1c9b-4e73-b5d8-6e0f3a9c2b17">
-        <Shortcut Id="SquirrelDiskShortcut" Name="SquirrelDisk" Description="See what's using your disk space"
-                  Target="[INSTALLFOLDER]squirreldisk.exe" WorkingDirectory="INSTALLFOLDER" Icon="AppIcon" />
-        <RegistryValue Root="HKCU" Key="Software\SquirrelDisk" Name="StartMenuShortcut" Type="integer" Value="1" KeyPath="yes" />
+        <Shortcut Id="DCXShortcut" Name="DCX" Description="See what's using your disk space"
+                  Target="[INSTALLFOLDER]dcx.exe" WorkingDirectory="INSTALLFOLDER" Icon="AppIcon" />
+        <RegistryValue Root="HKCU" Key="Software\DCX" Name="StartMenuShortcut" Type="integer" Value="1" KeyPath="yes" />
       </Component>
     </StandardDirectory>
 
-    <Feature Id="Main" Title="SquirrelDisk">
+    <Feature Id="Main" Title="DCX">
       <ComponentRef Id="MainExecutable" />
       <ComponentRef Id="StartMenuShortcut" />
       <ComponentRef Id="CommandLine" />
@@ -64,7 +64,7 @@
     </Feature>
 
     <!-- Offer to start the app at the end of the install -->
-    <CustomAction Id="LaunchApp" Directory="INSTALLFOLDER" ExeCommand="&quot;[INSTALLFOLDER]squirreldisk.exe&quot;" Return="asyncNoWait" />
+    <CustomAction Id="LaunchApp" Directory="INSTALLFOLDER" ExeCommand="&quot;[INSTALLFOLDER]dcx.exe&quot;" Return="asyncNoWait" />
     <InstallExecuteSequence>
       <Custom Action="LaunchApp" After="InstallFinalize" Condition="NOT Installed AND UILevel &gt; 2" />
     </InstallExecuteSequence>

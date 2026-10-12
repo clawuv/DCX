@@ -359,7 +359,7 @@ impl App {
                         ui,
                         Pos2::new(x0, y),
                         w,
-                        tr("SquirrelDisk reaches 70+ storage providers through rclone, a free open-source tool. Install it with one click: it goes into SquirrelDisk's own folder and needs no admin rights."),
+                        tr("DCX reaches 70+ storage providers through rclone, a free open-source tool. Install it with one click: it goes into DCX's own folder and needs no admin rights."),
                         font(13.0),
                         theme.text_dim,
                     ) + 22.0;
@@ -703,11 +703,11 @@ impl App {
             y += rows * 70.0;
             if oauth || form.provider.is_none() {
                 let msg = if form.provider.is_none() {
-                    tr("SquirrelDisk can rename this account. To change its other settings, use the advanced setup in a terminal.")
+                    tr("DCX can rename this account. To change its other settings, use the advanced setup in a terminal.")
                 } else if editing {
                     tr("Sign in again if the connection stopped working or you want to switch account.")
                 } else {
-                    tr("Your browser will open so you can sign in. SquirrelDisk never sees your password: rclone keeps the access token on this computer.")
+                    tr("Your browser will open so you can sign in. DCX never sees your password: rclone keeps the access token on this computer.")
                 };
                 y += wrapped(ui, Pos2::new(x0, y + 4.0), w, msg, font(12.5), theme.text_dim) + 16.0;
                 if editing && oauth {

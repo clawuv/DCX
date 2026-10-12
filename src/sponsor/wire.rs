@@ -1,4 +1,4 @@
-//! **Everything SquirrelDisk ever sends about sponsors is in this file.**
+//! **Everything DCX ever sends about sponsors is in this file.**
 //!
 //! | When                        | Request                                   | Contains                          |
 //! |-----------------------------|-------------------------------------------|-----------------------------------|
@@ -14,9 +14,9 @@ use super::Ad;
 use std::collections::HashMap;
 use std::sync::Mutex;
 
-pub const API: &str = "https://www.squirreldisk.com";
+pub const API: &str = "https://www.dcx.com";
 
-const UA: &str = concat!("SquirrelDisk/", env!("CARGO_PKG_VERSION"));
+const UA: &str = concat!("DCX/", env!("CARGO_PKG_VERSION"));
 
 #[derive(serde::Deserialize)]
 struct Catalog {

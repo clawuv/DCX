@@ -304,11 +304,11 @@ impl App {
                     (tr("Watch for changes"), tr("Update the chart when files change on disk"), 2),
                     (tr("Folder menu"), {
                         if cfg!(target_os = "macos") {
-                            tr("Adds “Scan with SquirrelDisk” to Quick Actions when you right-click a folder in Finder")
+                            tr("Adds “Scan with DCX” to Quick Actions when you right-click a folder in Finder")
                         } else if cfg!(windows) {
-                            tr("Adds “Scan with SquirrelDisk” when you right-click a folder (under “Show more options” on Windows 11)")
+                            tr("Adds “Scan with DCX” when you right-click a folder (under “Show more options” on Windows 11)")
                         } else {
-                            tr("Adds “Scan with SquirrelDisk” to your file manager, or to its “Open with” menu")
+                            tr("Adds “Scan with DCX” to your file manager, or to its “Open with” menu")
                         }
                     }, 3),
                 ];
@@ -327,9 +327,9 @@ impl App {
                 let status = super::integration::cli_status();
                 let installing = self.cli_job.is_some();
                 let cli_sub = match &status {
-                    Cli::Installed(link) if !cfg!(target_os = "linux") || super::integration::cli_on_path(link) => trf("Type {command} in a terminal", &[("command", &"squirreldisk scan <folder>")]),
+                    Cli::Installed(link) if !cfg!(target_os = "linux") || super::integration::cli_on_path(link) => trf("Type {command} in a terminal", &[("command", &"dcx scan <folder>")]),
                     Cli::Installed(link) => trf("Linked at {path}, but that folder isn't on your PATH", &[("path", &link.display())]),
-                    Cli::Missing(_) => trf("Scan folders from a terminal, without the window: {command}", &[("command", &"squirreldisk scan <folder>")]),
+                    Cli::Missing(_) => trf("Scan folders from a terminal, without the window: {command}", &[("command", &"dcx scan <folder>")]),
                     Cli::Taken(link) => trf("{path} already belongs to another program", &[("path", &link.display())]),
                     Cli::Unavailable(why) => why.clone(),
                 };
@@ -465,7 +465,7 @@ impl App {
                 UpState::Ready(v) => trf("{version} is ready — restart to update", &[("version", v)]),
                 UpState::Failed(e) => trf("Update check failed: {error}", &[("error", e)]),
             };
-            let mut line = format!("SquirrelDisk {}  ·  {}", env!("CARGO_PKG_VERSION"), status);
+            let mut line = format!("DCX {}  ·  {}", env!("CARGO_PKG_VERSION"), status);
             if let Some(e) = &gl_error {
                 line = format!("{line}  ·  {}", trf("CPU renderer ({reason})", &[("reason", e)]));
             }
@@ -625,7 +625,7 @@ impl App {
                 ui,
                 Pos2::new(x0, y),
                 w,
-                tr("SquirrelDisk installs a tiny agent in ~/.cache/squirreldisk on the server when possible, otherwise it uses find or du. If your key has a passphrase, you'll be asked for it."),
+                tr("DCX installs a tiny agent in ~/.cache/dcx on the server when possible, otherwise it uses find or du. If your key has a passphrase, you'll be asked for it."),
                 font(11.5),
                 theme.text_faint,
             );

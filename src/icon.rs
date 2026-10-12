@@ -278,9 +278,9 @@ pub fn write_assets(dir: &std::path::Path) -> std::io::Result<()> {
     for img in &images {
         ico.extend_from_slice(img);
     }
-    std::fs::write(dir.join("SquirrelDisk.ico"), ico)?;
+    std::fs::write(dir.join("DCX.ico"), ico)?;
     // macOS iconset → icns
-    let set = dir.join("SquirrelDisk.iconset");
+    let set = dir.join("DCX.iconset");
     std::fs::create_dir_all(&set)?;
     for s in [16u32, 32, 128, 256, 512] {
         std::fs::write(set.join(format!("icon_{s}x{s}.png")), png(s, Frame::IDLE, true))?;
@@ -292,7 +292,7 @@ pub fn write_assets(dir: &std::path::Path) -> std::io::Result<()> {
             .arg("icns")
             .arg(&set)
             .arg("-o")
-            .arg(dir.join("SquirrelDisk.icns"))
+            .arg(dir.join("DCX.icns"))
             .status()
             .map(|s| s.success())
             .unwrap_or(false);

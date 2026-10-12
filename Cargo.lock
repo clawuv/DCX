@@ -519,6 +519,33 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0c87e182de0887fd5361989c677c4e8f5000cd9491d6d563161a8f3a5519fc7f"
 
 [[package]]
+name = "dcx"
+version = "1.1.0"
+dependencies = [
+ "eframe",
+ "egui_glow",
+ "embed-resource",
+ "libc",
+ "miniz_oxide 0.8.9",
+ "notify",
+ "objc2 0.6.4",
+ "objc2-app-kit 0.3.2",
+ "objc2-foundation 0.3.2",
+ "raw-window-handle",
+ "rfd",
+ "ring",
+ "rodio",
+ "self-replace",
+ "serde",
+ "serde_json",
+ "sysinfo",
+ "tiny-skia",
+ "trash",
+ "ureq",
+ "windows-sys 0.61.2",
+]
+
+[[package]]
 name = "deranged"
 version = "0.5.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2770,33 +2797,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "dd538fb6910ac1099850255cf94a94df6551fbdd602454387d0adb2d1ca6dead"
 dependencies = [
  "serde",
-]
-
-[[package]]
-name = "squirreldisk"
-version = "1.1.0"
-dependencies = [
- "eframe",
- "egui_glow",
- "embed-resource",
- "libc",
- "miniz_oxide 0.8.9",
- "notify",
- "objc2 0.6.4",
- "objc2-app-kit 0.3.2",
- "objc2-foundation 0.3.2",
- "raw-window-handle",
- "rfd",
- "ring",
- "rodio",
- "self-replace",
- "serde",
- "serde_json",
- "sysinfo",
- "tiny-skia",
- "trash",
- "ureq",
- "windows-sys 0.61.2",
 ]
 
 [[package]]

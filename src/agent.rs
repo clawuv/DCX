@@ -16,7 +16,7 @@ use std::time::Duration;
 pub fn main(args: &[String]) -> i32 {
     match args.first().map(|s| s.as_str()) {
         Some("version") => {
-            println!("squirreldisk-agent {}", env!("CARGO_PKG_VERSION"));
+            println!("dcx-agent {}", env!("CARGO_PKG_VERSION"));
             0
         }
         Some("scan") => {
@@ -27,7 +27,7 @@ pub fn main(args: &[String]) -> i32 {
             scan(PathBuf::from(path))
         }
         _ => {
-            eprintln!("usage: squirreldisk --agent (version|scan <path>)");
+            eprintln!("usage: dcx --agent (version|scan <path>)");
             2
         }
     }

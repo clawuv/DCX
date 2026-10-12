@@ -1,4 +1,4 @@
-//! Command line: `squirreldisk scan <folder>` prints what uses the space,
+//! Command line: `dcx scan <folder>` prints what uses the space,
 //! without opening a window. Part of every build, the headless one too.
 
 use crate::scan::local;
@@ -9,20 +9,20 @@ use std::sync::atomic::Ordering;
 use std::time::{Duration, Instant};
 
 pub const USAGE: &str = "\
-SquirrelDisk: see what's using your disk space.
+DCX: see what's using your disk space.
 
 Usage:
-  squirreldisk                        open the app
-  squirreldisk <folder>               open the app and scan <folder>
-  squirreldisk scan <folder> [options]
+  dcx                        open the app
+  dcx <folder>               open the app and scan <folder>
+  dcx scan <folder> [options]
                                       scan <folder> and print the largest items
 Options for scan:
   -d, --depth <n>   levels of subfolders to show (default 1)
   -n, --top <n>     largest items shown per folder, 0 for all (default 20)
       --json        print JSON instead (the same items, as a tree)
 
-  squirreldisk --version
-  squirreldisk --help
+  dcx --version
+  dcx --help
 ";
 
 /// `path` made absolute, links resolved. On Windows without the `\\?\`
@@ -50,12 +50,12 @@ pub fn main(args: &[String]) -> i32 {
         Some("scan") => match Options::parse(&args[1..]) {
             Ok(o) => scan(o),
             Err(e) => {
-                eprintln!("squirreldisk: {e}\n\n{USAGE}");
+                eprintln!("dcx: {e}\n\n{USAGE}");
                 2
             }
         },
         Some("--version" | "-V") => {
-            println!("squirreldisk {}", env!("CARGO_PKG_VERSION"));
+            println!("dcx {}", env!("CARGO_PKG_VERSION"));
             0
         }
         _ => {
@@ -90,7 +90,7 @@ impl Options {
                 _ => path = Some(PathBuf::from(a)),
             }
         }
-        o.path = path.ok_or("which folder? e.g. squirreldisk scan .")?;
+        o.path = path.ok_or("which folder? e.g. dcx scan .")?;
         Ok(o)
     }
 }
@@ -98,7 +98,7 @@ impl Options {
 fn scan(o: Options) -> i32 {
     let path = absolute(&o.path);
     if !path.is_dir() {
-        eprintln!("squirreldisk: {}: not a folder", o.path.display());
+        eprintln!("dcx: {}: not a folder", o.path.display());
         return 1;
     }
     let started = Instant::now();

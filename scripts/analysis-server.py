@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Reference server for the SquirrelDisk AI analysis contract (v1).
+"""Reference server for the DCX AI analysis contract (v1).
 
 Two modes:
 
@@ -181,7 +181,7 @@ def handle_payload(payload, use_llm, timeout):
 # ── HTTP ─────────────────────────────────────────────────────────────
 
 class Handler(BaseHTTPRequestHandler):
-    server_version = "SquirrelDiskAnalysis/dev"
+    server_version = "DCXAnalysis/dev"
     tokens = {}          # token -> plan
     free_daily = 10      # requests/day for anonymous clients (0 = unlimited)
     use_llm = False
@@ -260,7 +260,7 @@ class Handler(BaseHTTPRequestHandler):
 
 
 def main():
-    ap = argparse.ArgumentParser(description="SquirrelDisk analysis reference server")
+    ap = argparse.ArgumentParser(description="DCX analysis reference server")
     ap.add_argument("--host", default="127.0.0.1")
     ap.add_argument("--port", type=int, default=8787)
     ap.add_argument("--token", action="append", default=[], help="a pro token (repeatable)")
@@ -281,7 +281,7 @@ def main():
 
     httpd = ThreadingHTTPServer((args.host, args.port), Handler)
     mode = "llm" if args.llm else "heuristics"
-    print("SquirrelDisk analysis server on http://%s:%d/v1/analyze (%s, %d pro tokens, free %s/day)"
+    print("DCX analysis server on http://%s:%d/v1/analyze (%s, %d pro tokens, free %s/day)"
           % (args.host, args.port, mode, len(tokens), args.free_daily or "∞"))
     try:
         httpd.serve_forever()

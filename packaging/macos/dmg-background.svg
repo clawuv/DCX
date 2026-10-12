@@ -10,7 +10,7 @@
   <circle cx="0" cy="460" r="200" fill="#ff7ec8" opacity="0.05"/>
   <path d="M258 175 Q330 135 392 168" fill="none" stroke="#8e6bff" stroke-width="4" stroke-linecap="round" stroke-dasharray="2 11"/>
   <path d="M389 157 L404 175 L381 179" fill="none" stroke="#8e6bff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
-  <text x="330" y="282" text-anchor="middle" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="17" font-weight="600" fill="#3a2d52">Drag SquirrelDisk to Applications</text>
+  <text x="330" y="282" text-anchor="middle" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="17" font-weight="600" fill="#3a2d52">Drag DCX to Applications</text>
   <text x="330" y="305" text-anchor="middle" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="12.5" fill="#7d6f93">Won't open? Read the note below.</text>
   <line x1="120" y1="330" x2="540" y2="330" stroke="#8e6bff" stroke-opacity="0.15"/>
 </svg>

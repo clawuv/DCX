@@ -1,6 +1,6 @@
 //! Self-update from GitHub releases.
 //!
-//! Release assets are expected to be named `squirreldisk-<target-triple>` (plus
+//! Release assets are expected to be named `dcx-<target-triple>` (plus
 //! `.exe` on Windows), as produced by `.github/workflows/release.yml`.
 
 use std::io::Read;
@@ -78,9 +78,9 @@ pub fn appimage_path() -> Option<std::path::PathBuf> {
 
 fn appimage_asset() -> &'static str {
     if cfg!(target_arch = "aarch64") {
-        "SquirrelDisk-aarch64.AppImage"
+        "DCX-aarch64.AppImage"
     } else {
-        "SquirrelDisk-x86_64.AppImage"
+        "DCX-x86_64.AppImage"
     }
 }
 
@@ -119,7 +119,7 @@ impl Updater {
             let r = (|| -> Result<State, String> {
                 let url = format!("https://api.github.com/repos/{GITHUB_REPO}/releases/latest");
                 let mut resp = ureq::get(&url)
-                    .header("User-Agent", concat!("SquirrelDisk/", env!("CARGO_PKG_VERSION")))
+                    .header("User-Agent", concat!("DCX/", env!("CARGO_PKG_VERSION")))
                     .header("Accept", "application/vnd.github+json")
                     .call()
                     .map_err(|e| e.to_string())?;
@@ -127,7 +127,7 @@ impl Updater {
                 if rel.draft || rel.prerelease || !is_newer(&rel.tag_name, env!("CARGO_PKG_VERSION")) {
                     return Ok(State::UpToDate);
                 }
-                let want = format!("squirreldisk-{}", current_target());
+                let want = format!("dcx-{}", current_target());
                 let asset = rel
                     .assets
                     .iter()
@@ -160,7 +160,7 @@ impl Updater {
         std::thread::spawn(move || {
             let r = (|| -> Result<(), String> {
                 let resp = ureq::get(&url)
-                    .header("User-Agent", concat!("SquirrelDisk/", env!("CARGO_PKG_VERSION")))
+                    .header("User-Agent", concat!("DCX/", env!("CARGO_PKG_VERSION")))
                     .call()
                     .map_err(|e| e.to_string())?;
                 total.store(resp.body().content_length().unwrap_or(0), Ordering::Relaxed);
@@ -168,8 +168,8 @@ impl Updater {
                 let appimage = appimage_path();
                 // Download next to the AppImage so the final rename is atomic.
                 let tmp = match &appimage {
-                    Some(p) => p.with_file_name(format!(".squirreldisk-update-{}.AppImage", std::process::id())),
-                    None => std::env::temp_dir().join(format!("squirreldisk-update-{}", std::process::id())),
+                    Some(p) => p.with_file_name(format!(".dcx-update-{}.AppImage", std::process::id())),
+                    None => std::env::temp_dir().join(format!("dcx-update-{}", std::process::id())),
                 };
                 let mut f = std::fs::File::create(&tmp).map_err(|e| e.to_string())?;
                 let mut buf = vec![0u8; 64 * 1024];

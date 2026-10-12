@@ -1,6 +1,6 @@
 //! # Sponsors, the privacy-respecting way
 //!
-//! SquirrelDisk shows one slim sponsor banner. Choosing *which* one is done
+//! DCX shows one slim sponsor banner. Choosing *which* one is done
 //! **entirely on your computer**:
 //!
 //! 1. We download the **whole** catalog (`wire::fetch_catalog`). Every user
@@ -25,7 +25,7 @@ use crate::i18n::{tr, trf};
 use std::collections::HashSet;
 use std::sync::{Arc, Mutex};
 
-pub const SPONSORS_URL: &str = "https://www.squirreldisk.com/sponsors";
+pub const SPONSORS_URL: &str = "https://www.dcx.com/sponsors";
 
 /// Targeting rules attached to an ad. Every listed condition must hold;
 /// empty lists / `None` mean "any".

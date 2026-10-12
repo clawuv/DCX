@@ -1,8 +1,8 @@
 <p align="center">
-  <img src="assets/icon/icon-256.png" width="128" alt="SquirrelDisk logo">
+  <img src="assets/icon/icon-256.png" width="128" alt="DCX logo">
 </p>
 
-<h1 align="center">SquirrelDisk</h1>
+<h1 align="center">DCX</h1>
 
 <p align="center">
   See what's using your disk space, and clean it up safely.<br>
@@ -10,14 +10,14 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/adileo/squirreldisk/releases/latest"><img src="https://img.shields.io/github/v/release/adileo/squirreldisk?color=%238e6bff&label=version&style=flat-square"></a>
-  <a href="https://github.com/adileo/squirreldisk/releases"><img src="https://img.shields.io/github/downloads/adileo/squirreldisk/total?color=%23ff7ec8&style=flat-square"></a>
+  <a href="https://github.com/adileo/dcx/releases/latest"><img src="https://img.shields.io/github/v/release/adileo/dcx?color=%238e6bff&label=version&style=flat-square"></a>
+  <a href="https://github.com/adileo/dcx/releases"><img src="https://img.shields.io/github/downloads/adileo/dcx/total?color=%23ff7ec8&style=flat-square"></a>
   <img src="https://img.shields.io/badge/built_with-Rust-dca282.svg?style=flat-square">
   <a href="https://discord.gg/Xp8QtMM65w"><img src="https://img.shields.io/badge/Discord-%235865F2.svg?style=flat-square&logo=discord&logoColor=white"></a>
 </p>
 
 > [!NOTE]
-> **SquirrelDisk 2 is here.** After a few quiet years, SquirrelDisk is back, rebuilt from the ground up by its original author in native Rust: faster, better looking, and with many long-standing bugs fixed on every platform. Completely free, and actively maintained here in this repository.
+> **DCX 2 is here.** After a few quiet years, DCX is back, rebuilt from the ground up by its original author in native Rust: faster, better looking, and with many long-standing bugs fixed on every platform. Completely free, and actively maintained here in this repository.
 
 <p align="center">
   <img src="screenshots/hero.gif" alt="Scanning a disk and exploring the chart" width="860">
@@ -27,24 +27,24 @@
 
 | Platform | Download |
 |----------|----------|
-| macOS (Apple silicon and Intel) | [SquirrelDisk-macOS.dmg](https://github.com/adileo/squirreldisk/releases/latest/download/SquirrelDisk-macOS.dmg) |
-| Windows 10 / 11 | [Installer (.msi)](https://github.com/adileo/squirreldisk/releases/latest/download/SquirrelDisk-Windows.msi) · [Portable (.exe)](https://github.com/adileo/squirreldisk/releases/latest/download/squirreldisk-x86_64-pc-windows-msvc.exe) |
-| Linux (x86_64) | [AppImage](https://github.com/adileo/squirreldisk/releases/latest/download/SquirrelDisk-x86_64.AppImage) · [Archive (.tar.gz)](https://github.com/adileo/squirreldisk/releases/latest/download/SquirrelDisk-Linux-x86_64.tar.gz) |
+| macOS (Apple silicon and Intel) | [DCX-macOS.dmg](https://github.com/adileo/dcx/releases/latest/download/DCX-macOS.dmg) |
+| Windows 10 / 11 | [Installer (.msi)](https://github.com/adileo/dcx/releases/latest/download/DCX-Windows.msi) · [Portable (.exe)](https://github.com/adileo/dcx/releases/latest/download/dcx-x86_64-pc-windows-msvc.exe) |
+| Linux (x86_64) | [AppImage](https://github.com/adileo/dcx/releases/latest/download/DCX-x86_64.AppImage) · [Archive (.tar.gz)](https://github.com/adileo/dcx/releases/latest/download/DCX-Linux-x86_64.tar.gz) |
 
-All builds are on the [releases page](https://github.com/adileo/squirreldisk/releases). SquirrelDisk updates itself when a new version comes out.
+All builds are on the [releases page](https://github.com/adileo/dcx/releases). DCX updates itself when a new version comes out.
 
 <details>
 <summary>macOS says the app can't be opened</summary>
 
-SquirrelDisk is distributed outside the App Store, so macOS asks for confirmation the first time.
+DCX is distributed outside the App Store, so macOS asks for confirmation the first time.
 
-1. Open SquirrelDisk once and close the warning.
-2. Go to **System Settings → Privacy & Security**, scroll down and click **Open Anyway** next to the SquirrelDisk message, then confirm.
+1. Open DCX once and close the warning.
+2. Go to **System Settings → Privacy & Security**, scroll down and click **Open Anyway** next to the DCX message, then confirm.
 
 If macOS reports the app as damaged, run this in Terminal and open it again:
 
 ```bash
-xattr -dr com.apple.quarantine /Applications/SquirrelDisk.app
+xattr -dr com.apple.quarantine /Applications/DCX.app
 ```
 </details>
 
@@ -57,19 +57,19 @@ Click **More info**, then **Run anyway**. For the portable `.exe` you can also r
 <details>
 <summary>Portable mode (Windows and Linux)</summary>
 
-To keep everything on a USB stick or in a single folder, create an empty folder named `portable` next to the Windows `.exe`, the `.AppImage` file or the `squirreldisk` binary from the archive:
+To keep everything on a USB stick or in a single folder, create an empty folder named `portable` next to the Windows `.exe`, the `.AppImage` file or the `dcx` binary from the archive:
 
 ```
-SquirrelDisk/
-├── squirreldisk-x86_64-pc-windows-msvc.exe
+DCX/
+├── dcx-x86_64-pc-windows-msvc.exe
 └── portable/
 ```
 
-SquirrelDisk then keeps its settings there instead of in your user profile, along with the rclone it installs and your cloud accounts (`rclone.conf`). If you set `RCLONE_CONFIG` yourself, that file is used instead.
+DCX then keeps its settings there instead of in your user profile, along with the rclone it installs and your cloud accounts (`rclone.conf`). If you set `RCLONE_CONFIG` yourself, that file is used instead.
 
 Self-update replaces the executable in place, so the folder must be writable.
 
-To use a specific folder instead, set the `SQUIRRELDISK_CONFIG_DIR` environment variable. It takes priority over the `portable` folder and works on macOS too.
+To use a specific folder instead, set the `DCX_CONFIG_DIR` environment variable. It takes priority over the `portable` folder and works on macOS too.
 </details>
 
 ## Features
@@ -92,21 +92,21 @@ To use a specific folder instead, set the `SQUIRRELDISK_CONFIG_DIR` environment 
 
 **Safe by design.** System folders, your home folder, whole drives and other essential locations are protected. App and settings folders ask for an extra confirmation before anything happens.
 
-**Accurate numbers.** SquirrelDisk shows the space files really take on disk. Files that live only in the cloud (iCloud, Dropbox, Google Drive, OneDrive) count as zero, and linked folders are counted once.
+**Accurate numbers.** DCX shows the space files really take on disk. Files that live only in the cloud (iCloud, Dropbox, Google Drive, OneDrive) count as zero, and linked folders are counted once.
 
 **Always up to date.** Delete something in Finder, Explorer or your file manager and the chart updates on its own.
 
-**Servers and cloud storage too.** Scan any machine you can reach over SSH, or S3 buckets, Google Drive, Dropbox, FTP and many more cloud services through [rclone](https://rclone.org). No rclone yet? SquirrelDisk installs it with one click, and you can add, edit and remove your cloud accounts right from the app.
+**Servers and cloud storage too.** Scan any machine you can reach over SSH, or S3 buckets, Google Drive, Dropbox, FTP and many more cloud services through [rclone](https://rclone.org). No rclone yet? DCX installs it with one click, and you can add, edit and remove your cloud accounts right from the app.
 
-**Right from your folders.** Turn on "Folder menu" in Settings and right-clicking a folder offers "Scan with SquirrelDisk": in Finder's Quick Actions on macOS, in Explorer on Windows (under "Show more options" on Windows 11), and in Dolphin, Nemo, Nautilus (Scripts) or any file manager's "Open with" on Linux.
+**Right from your folders.** Turn on "Folder menu" in Settings and right-clicking a folder offers "Scan with DCX": in Finder's Quick Actions on macOS, in Explorer on Windows (under "Show more options" on Windows 11), and in Dolphin, Nemo, Nautilus (Scripts) or any file manager's "Open with" on Linux.
 
-**From the terminal too.** `squirreldisk <folder>` opens the app on that folder, and `squirreldisk scan <folder>` prints the biggest items without opening a window, as a tree (`--depth`, `--top`) or as JSON (`--json`) for scripts. The Windows installer puts the command on your PATH; on macOS and Linux SquirrelDisk sets it up on first launch when it can, or from Settings → Command-line tool.
+**From the terminal too.** `dcx <folder>` opens the app on that folder, and `dcx scan <folder>` prints the biggest items without opening a window, as a tree (`--depth`, `--top`) or as JSON (`--json`) for scripts. The Windows installer puts the command on your PATH; on macOS and Linux DCX sets it up on first launch when it can, or from Settings → Command-line tool.
 
 ```
-$ squirreldisk scan ~/Projects --depth 2 --top 3
+$ dcx scan ~/Projects --depth 2 --top 3
 /Users/me/Projects  48.2 GB · 912,044 files · 3.1s
 
-  21.4 GB   44%  squirreldisk/
+  21.4 GB   44%  dcx/
   19.8 GB   41%  ├─ target/
    1.2 GB    2%  ├─ node_modules/
    402 MB    1%  └─ … 38 more
@@ -116,7 +116,7 @@ $ squirreldisk scan ~/Projects --depth 2 --top 3
 
 **Light on your machine.** The app is about 8 MB, starts instantly, and maps millions of files with a small amount of memory. It runs smoothly on older computers too.
 
-**Speaks your language.** SquirrelDisk is available in 25 languages, including English, 简体中文, हिन्दी, Español, Français, العربية, Português, Русский, Deutsch, 日本語, 한국어 and Italiano. It picks your system language automatically, and you can change it in Settings.
+**Speaks your language.** DCX is available in 25 languages, including English, 简体中文, हिन्दी, Español, Français, العربية, Português, Русский, Deutsch, 日本語, 한국어 and Italiano. It picks your system language automatically, and you can change it in Settings.
 
 **Make it yours.** Seven colour themes, optional sound effects, and an adjustable chart depth.
 
@@ -133,14 +133,14 @@ $ squirreldisk scan ~/Projects --depth 2 --top 3
 
 ## Sponsors
 
-SquirrelDisk is free, and sponsors help keep it that way. Sponsors appear in a small banner inside the app. The banner is chosen on each user's computer, so personal data stays private.
+DCX is free, and sponsors help keep it that way. Sponsors appear in a small banner inside the app. The banner is chosen on each user's computer, so personal data stays private.
 
-Interested? Head to [squirreldisk.com/sponsors](https://squirreldisk.com/sponsors).
+Interested? Head to [dcx.com/sponsors](https://dcx.com/sponsors).
 
 ## Community
 
 - Chat with us on [Discord](https://discord.gg/Xp8QtMM65w)
-- Report bugs and suggest ideas in [issues](https://github.com/adileo/squirreldisk/issues)
+- Report bugs and suggest ideas in [issues](https://github.com/adileo/dcx/issues)
 
 ## Build from source
 
@@ -154,14 +154,14 @@ On Linux you also need the ALSA, X11 and Wayland development packages (`libasoun
 
 ## AI usage disclaimer
 
-SquirrelDisk is designed, written and maintained by one developer. I use AI tools as an assistant in a few specific areas, and I review every change myself:
+DCX is designed, written and maintained by one developer. I use AI tools as an assistant in a few specific areas, and I review every change myself:
 
 - **Translations.** AI helped me translate the app into 25 languages, which I couldn't have done on my own.
 - **Interface polish.** Fine-tuning animations and interactions, and building parts of the website.
 - **Issues and replies.** Phrasing answers more clearly in English, and in some routine cases posting them automatically. Either way, every reply goes through me.
 - **Chores.** Small refactors, build tweaks and similar mechanical changes.
 
-The core of SquirrelDisk 2 (the scanner, the chart and the cleanup logic) is my own from-scratch rewrite. Every release is reviewed and tested by hand on macOS, Windows and Linux before it ships.
+The core of DCX 2 (the scanner, the chart and the cleanup logic) is my own from-scratch rewrite. Every release is reviewed and tested by hand on macOS, Windows and Linux before it ships.
 
 ### AI-assisted contributions
 

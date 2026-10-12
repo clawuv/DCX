@@ -24,38 +24,38 @@ jobs:
         run: |
           cargo build --release --target aarch64-apple-darwin
           cargo build --release --target x86_64-apple-darwin
-          lipo -create -output squirreldisk-universal \
-            target/aarch64-apple-darwin/release/squirreldisk \
-            target/x86_64-apple-darwin/release/squirreldisk
+          lipo -create -output dcx-universal \
+            target/aarch64-apple-darwin/release/dcx \
+            target/x86_64-apple-darwin/release/dcx
       - name: Bundle and package
         run: |
-          scripts/bundle-macos.sh squirreldisk-universal dist
-          codesign --force --deep -s - dist/SquirrelDisk.app
+          scripts/bundle-macos.sh dcx-universal dist
+          codesign --force --deep -s - dist/DCX.app
           python3 -m venv .venv && .venv/bin/pip install --quiet dmgbuild
-          .venv/bin/dmgbuild -s packaging/macos/dmg-settings.py -D app=dist/SquirrelDisk.app SquirrelDisk SquirrelDisk-macOS.dmg
+          .venv/bin/dmgbuild -s packaging/macos/dmg-settings.py -D app=dist/DCX.app DCX DCX-macOS.dmg
           # raw binaries used by the in-app updater
-          cp target/aarch64-apple-darwin/release/squirreldisk squirreldisk-aarch64-apple-darwin
-          cp target/x86_64-apple-darwin/release/squirreldisk squirreldisk-x86_64-apple-darwin
+          cp target/aarch64-apple-darwin/release/dcx dcx-aarch64-apple-darwin
+          cp target/x86_64-apple-darwin/release/dcx dcx-x86_64-apple-darwin
       - name: Build agents
         run: |
           cargo build --release --no-default-features --target aarch64-apple-darwin
-          cp target/aarch64-apple-darwin/release/squirreldisk squirreldisk-agent-aarch64-apple-darwin
+          cp target/aarch64-apple-darwin/release/dcx dcx-agent-aarch64-apple-darwin
           cargo build --release --no-default-features --target x86_64-apple-darwin
-          cp target/x86_64-apple-darwin/release/squirreldisk squirreldisk-agent-x86_64-apple-darwin
+          cp target/x86_64-apple-darwin/release/dcx dcx-agent-x86_64-apple-darwin
       - uses: actions/upload-artifact@v4
         with:
           name: macos
-          path: SquirrelDisk-macOS.dmg
+          path: DCX-macOS.dmg
       - uses: softprops/action-gh-release@v2
         if: startsWith(github.ref, 'refs/tags/')
         with:
           body_path: .github/release-notes.md
           files: |
-            SquirrelDisk-macOS.dmg
-            squirreldisk-aarch64-apple-darwin
-            squirreldisk-x86_64-apple-darwin
-            squirreldisk-agent-aarch64-apple-darwin
-            squirreldisk-agent-x86_64-apple-darwin
+            DCX-macOS.dmg
+            dcx-aarch64-apple-darwin
+            dcx-x86_64-apple-darwin
+            dcx-agent-aarch64-apple-darwin
+            dcx-agent-x86_64-apple-darwin
 
   windows:
     runs-on: windows-latest
@@ -64,35 +64,35 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - run: cargo test --release
       - run: cargo build --release
-      - run: copy target\release\squirreldisk.exe squirreldisk-x86_64-pc-windows-msvc.exe
-      # the headless build, a console program: the `squirreldisk` command (see console_shim)
+      - run: copy target\release\dcx.exe dcx-x86_64-pc-windows-msvc.exe
+      # the headless build, a console program: the `dcx` command (see console_shim)
       - run: cargo build --release --no-default-features --target-dir target-cli
-      - run: copy target-cli\release\squirreldisk.exe squirreldisk.com
+      - run: copy target-cli\release\dcx.exe dcx.com
       - name: Build MSI installer
         shell: pwsh
         run: |
           dotnet tool install --global wix --version 5.0.2
           $version = (Select-String -Path Cargo.toml -Pattern '^version = "(.+)"').Matches[0].Groups[1].Value
-          wix build packaging/windows/squirreldisk.wxs -arch x64 -d Version=$version -d ExePath=target\release\squirreldisk.exe -d ComPath=squirreldisk.com -o SquirrelDisk-Windows.msi
+          wix build packaging/windows/dcx.wxs -arch x64 -d Version=$version -d ExePath=target\release\dcx.exe -d ComPath=dcx.com -o DCX-Windows.msi
       - name: Check the embedded icon
         shell: pwsh
         run: |
           Add-Type -AssemblyName System.Drawing
-          $icon = [System.Drawing.Icon]::ExtractAssociatedIcon("$PWD\squirreldisk-x86_64-pc-windows-msvc.exe")
+          $icon = [System.Drawing.Icon]::ExtractAssociatedIcon("$PWD\dcx-x86_64-pc-windows-msvc.exe")
           $icon.ToBitmap().Save("$PWD\exe-icon.png")
       - uses: actions/upload-artifact@v4
         with:
           name: windows
           path: |
-            SquirrelDisk-Windows.msi
+            DCX-Windows.msi
             exe-icon.png
       - uses: softprops/action-gh-release@v2
         if: startsWith(github.ref, 'refs/tags/')
         with:
           body_path: .github/release-notes.md
           files: |
-            SquirrelDisk-Windows.msi
-            squirreldisk-x86_64-pc-windows-msvc.exe
+            DCX-Windows.msi
+            dcx-x86_64-pc-windows-msvc.exe
 
   linux:
     runs-on: ubuntu-22.04
@@ -106,19 +106,19 @@ jobs:
       - name: Build and package app
         run: |
           cargo build --release
-          cp target/release/squirreldisk squirreldisk-x86_64-unknown-linux-gnu
-          mkdir -p pkg/SquirrelDisk
-          cp target/release/squirreldisk pkg/SquirrelDisk/
-          cp packaging/linux/squirreldisk.desktop pkg/SquirrelDisk/
-          cp assets/icon/icon-256.png pkg/SquirrelDisk/squirreldisk.png
-          tar -C pkg -czf SquirrelDisk-Linux-x86_64.tar.gz SquirrelDisk
+          cp target/release/dcx dcx-x86_64-unknown-linux-gnu
+          mkdir -p pkg/DCX
+          cp target/release/dcx pkg/DCX/
+          cp packaging/linux/dcx.desktop pkg/DCX/
+          cp assets/icon/icon-256.png pkg/DCX/dcx.png
+          tar -C pkg -czf DCX-Linux-x86_64.tar.gz DCX
       - name: Build AppImage
         run: |
           sudo apt-get install -y zsync
           wget -q https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage -O appimagetool
           chmod +x appimagetool
           mkdir -p AppDir/usr/bin AppDir/usr/share/applications AppDir/usr/share/icons/hicolor/256x256/apps
-          cp target/release/squirreldisk AppDir/usr/bin/
+          cp target/release/dcx AppDir/usr/bin/
           # winit loads xkbcommon with dlopen, so it is not a linked dependency;
           # bundle it for systems without it (e.g. minimal X11 setups)
           sudo apt-get install -y libxkbcommon-x11-0 libxcb-xkb1
@@ -129,40 +129,40 @@ jobs:
           ln -s libxkbcommon.so.0 AppDir/usr/lib/libxkbcommon.so
           ln -s libxkbcommon-x11.so.0 AppDir/usr/lib/libxkbcommon-x11.so
           install -m755 packaging/linux/AppRun AppDir/AppRun
-          cp packaging/linux/squirreldisk.desktop AppDir/
-          cp packaging/linux/squirreldisk.desktop AppDir/usr/share/applications/
-          cp assets/icon/icon-256.png AppDir/squirreldisk.png
-          cp assets/icon/icon-256.png AppDir/usr/share/icons/hicolor/256x256/apps/squirreldisk.png
+          cp packaging/linux/dcx.desktop AppDir/
+          cp packaging/linux/dcx.desktop AppDir/usr/share/applications/
+          cp assets/icon/icon-256.png AppDir/dcx.png
+          cp assets/icon/icon-256.png AppDir/usr/share/icons/hicolor/256x256/apps/dcx.png
           cp assets/icon/icon-256.png AppDir/.DirIcon
           # update info lets AppImageUpdate / Gear Lever update it in place
           ARCH=x86_64 APPIMAGE_EXTRACT_AND_RUN=1 ./appimagetool \
-            -u "gh-releases-zsync|adileo|squirreldisk|latest|SquirrelDisk-x86_64.AppImage.zsync" \
-            AppDir SquirrelDisk-x86_64.AppImage
+            -u "gh-releases-zsync|adileo|dcx|latest|DCX-x86_64.AppImage.zsync" \
+            AppDir DCX-x86_64.AppImage
           # smoke test: the bundled binary starts
-          APPIMAGE_EXTRACT_AND_RUN=1 ./SquirrelDisk-x86_64.AppImage --version
-          ls -la SquirrelDisk-x86_64.AppImage*
+          APPIMAGE_EXTRACT_AND_RUN=1 ./DCX-x86_64.AppImage --version
+          ls -la DCX-x86_64.AppImage*
       - uses: actions/upload-artifact@v4
         with:
           name: linux
           path: |
-            SquirrelDisk-x86_64.AppImage
-            SquirrelDisk-x86_64.AppImage.zsync
+            DCX-x86_64.AppImage
+            DCX-x86_64.AppImage.zsync
       - name: Build agents (static, musl)
         run: |
           pip install ziglang
           cargo install cargo-zigbuild --locked
           for t in x86_64-unknown-linux-musl aarch64-unknown-linux-musl; do
             cargo zigbuild --release --no-default-features --target $t
-            cp target/$t/release/squirreldisk squirreldisk-agent-$t
+            cp target/$t/release/dcx dcx-agent-$t
           done
       - uses: softprops/action-gh-release@v2
         if: startsWith(github.ref, 'refs/tags/')
         with:
           body_path: .github/release-notes.md
           files: |
-            SquirrelDisk-x86_64.AppImage
-            SquirrelDisk-x86_64.AppImage.zsync
-            SquirrelDisk-Linux-x86_64.tar.gz
-            squirreldisk-x86_64-unknown-linux-gnu
-            squirreldisk-agent-x86_64-unknown-linux-musl
-            squirreldisk-agent-aarch64-unknown-linux-musl
+            DCX-x86_64.AppImage
+            DCX-x86_64.AppImage.zsync
+            DCX-Linux-x86_64.tar.gz
+            dcx-x86_64-unknown-linux-gnu
+            dcx-agent-x86_64-unknown-linux-musl
+            dcx-agent-aarch64-unknown-linux-musl

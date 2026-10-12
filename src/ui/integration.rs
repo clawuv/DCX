@@ -1,5 +1,5 @@
-//! Hooks into the system: "Scan with SquirrelDisk" in the file manager's
-//! menu for folders, and the `squirreldisk` command in the terminal.
+//! Hooks into the system: "Scan with DCX" in the file manager's
+//! menu for folders, and the `dcx` command in the terminal.
 //!
 //! Everything here is per user (no admin rights, except for the command on
 //! macOS when `/usr/local/bin` isn't writable) and best effort: failures
@@ -19,7 +19,7 @@ fn target() -> Option<PathBuf> {
     Some(std::fs::canonicalize(&exe).unwrap_or(exe))
 }
 
-/// `…/SquirrelDisk.app` when running from a bundle.
+/// `…/DCX.app` when running from a bundle.
 #[cfg(target_os = "macos")]
 fn app_bundle(exe: &Path) -> Option<&Path> {
     exe.ancestors().find(|p| p.extension().is_some_and(|e| e == "app"))
@@ -30,7 +30,7 @@ fn app_bundle(exe: &Path) -> Option<&Path> {
 /// points at it breaks as soon as it goes away.
 fn check_location(t: &Path) -> Result<(), String> {
     if t.to_string_lossy().contains("/AppTranslocation/") || t.starts_with("/Volumes/") {
-        return Err(tr("Move SquirrelDisk to Applications first").to_string());
+        return Err(tr("Move DCX to Applications first").to_string());
     }
     Ok(())
 }
@@ -38,7 +38,7 @@ fn check_location(t: &Path) -> Result<(), String> {
 // ----------------------------------------------------------------------------
 // Folder menu
 
-/// Adds or removes "Scan with SquirrelDisk" for folders. Called when the
+/// Adds or removes "Scan with DCX" for folders. Called when the
 /// setting changes, and at launch while it's on, so the entry follows the
 /// app if it moves (and the language).
 pub fn set_folder_menu(on: bool) -> Result<(), String> {
@@ -46,14 +46,14 @@ pub fn set_folder_menu(on: bool) -> Result<(), String> {
     if on {
         check_location(&t)?;
     }
-    imp::set_folder_menu(on, &t, tr("Scan with SquirrelDisk")).map_err(|e| e.to_string())
+    imp::set_folder_menu(on, &t, tr("Scan with DCX")).map_err(|e| e.to_string())
 }
 
 #[cfg(target_os = "macos")]
 mod imp {
     use super::*;
 
-    const WORKFLOW: &str = "Scan with SquirrelDisk.workflow";
+    const WORKFLOW: &str = "Scan with DCX.workflow";
 
     /// A Quick Action (Finder: right click → Quick Actions) in
     /// `~/Library/Services`, written from the templates in
@@ -104,9 +104,9 @@ mod imp {
     /// Windows 11 they're under "Show more options" (the new menu only
     /// takes packaged apps). The installer removes them on uninstall.
     const KEYS: [(&str, &str); 3] = [
-        (r"Software\Classes\Directory\shell\SquirrelDisk", "%1"),
-        (r"Software\Classes\Directory\Background\shell\SquirrelDisk", "%V"),
-        (r"Software\Classes\Drive\shell\SquirrelDisk", "%1"),
+        (r"Software\Classes\Directory\shell\DCX", "%1"),
+        (r"Software\Classes\Directory\Background\shell\DCX", "%V"),
+        (r"Software\Classes\Drive\shell\DCX", "%1"),
     ];
 
     pub fn set_folder_menu(on: bool, target: &Path, label: &str) -> std::io::Result<()> {
@@ -175,15 +175,15 @@ mod imp {
     /// `installed` telling which file managers are there.
     pub fn set_folder_menu_in(data: &Path, on: bool, target: &Path, label: &str, installed: fn(&str) -> bool) -> std::io::Result<()> {
         let exec = format!("{} %f", desktop_quote(&target.to_string_lossy()));
-        let open_with = format!("[Desktop Entry]\nType=Application\nName=SquirrelDisk\nComment={label}\nExec={exec}\nIcon=squirreldisk\nMimeType=inode/directory;\nNoDisplay=true\nTerminal=false\n");
-        let dolphin = format!("[Desktop Entry]\nType=Service\nMimeType=inode/directory;\nActions=scan;\nX-KDE-ServiceTypes=KonqPopupMenu/Plugin\n\n[Desktop Action scan]\nName={label}\nIcon=squirreldisk\nExec={exec}\n");
-        let nemo = format!("[Nemo Action]\nName={label}\nIcon-Name=squirreldisk\nExec={} %F\nSelection=s\nExtensions=dir;\n", desktop_quote(&target.to_string_lossy()));
+        let open_with = format!("[Desktop Entry]\nType=Application\nName=DCX\nComment={label}\nExec={exec}\nIcon=dcx\nMimeType=inode/directory;\nNoDisplay=true\nTerminal=false\n");
+        let dolphin = format!("[Desktop Entry]\nType=Service\nMimeType=inode/directory;\nActions=scan;\nX-KDE-ServiceTypes=KonqPopupMenu/Plugin\n\n[Desktop Action scan]\nName={label}\nIcon=dcx\nExec={exec}\n");
+        let nemo = format!("[Nemo Action]\nName={label}\nIcon-Name=dcx\nExec={} %F\nSelection=s\nExtensions=dir;\n", desktop_quote(&target.to_string_lossy()));
         let script = format!("#!/bin/sh\n# {label}: the selected folder, or the one open\n[ $# -eq 0 ] && set -- \"$PWD\"\nexec {} \"$1\"\n", shell_quote(&target.to_string_lossy()));
         let files: [(PathBuf, String, bool); 5] = [
-            (data.join("applications/squirreldisk-folder.desktop"), open_with, true),
-            (data.join("kio/servicemenus/squirreldisk.desktop"), dolphin.clone(), installed("dolphin")),
-            (data.join("kservices5/ServiceMenus/squirreldisk.desktop"), dolphin, installed("dolphin")),
-            (data.join("nemo/actions/squirreldisk.nemo_action"), nemo, installed("nemo")),
+            (data.join("applications/dcx-folder.desktop"), open_with, true),
+            (data.join("kio/servicemenus/dcx.desktop"), dolphin.clone(), installed("dolphin")),
+            (data.join("kservices5/ServiceMenus/dcx.desktop"), dolphin, installed("dolphin")),
+            (data.join("nemo/actions/dcx.nemo_action"), nemo, installed("nemo")),
             (data.join("nautilus/scripts").join(label), script, installed("nautilus")),
         ];
         for (path, contents, wanted) in files {
@@ -245,7 +245,7 @@ fn shell_quote(s: &str) -> String {
 #[derive(Clone, Debug, PartialEq)]
 #[cfg_attr(windows, allow(dead_code))]
 pub enum Cli {
-    /// `squirreldisk` runs this app, from this path.
+    /// `dcx` runs this app, from this path.
     Installed(PathBuf),
     /// Can be installed at this path.
     Missing(PathBuf),
@@ -255,15 +255,15 @@ pub enum Cli {
     Unavailable(String),
 }
 
-/// Where `squirreldisk` goes: `/usr/local/bin` on macOS (on the default
+/// Where `dcx` goes: `/usr/local/bin` on macOS (on the default
 /// PATH), `~/.local/bin` on Linux (on the PATH of most distributions).
 /// Windows: the installer adds its folder to the PATH.
 #[cfg(unix)]
 fn cli_link() -> Option<PathBuf> {
     if cfg!(target_os = "macos") {
-        Some(PathBuf::from("/usr/local/bin/squirreldisk"))
+        Some(PathBuf::from("/usr/local/bin/dcx"))
     } else {
-        std::env::var_os("HOME").map(|h| PathBuf::from(h).join(".local/bin/squirreldisk"))
+        std::env::var_os("HOME").map(|h| PathBuf::from(h).join(".local/bin/dcx"))
     }
 }
 
@@ -301,7 +301,7 @@ pub fn cli_status() -> Cli {
 fn cli_exe(target: &Path) -> PathBuf {
     #[cfg(target_os = "macos")]
     if let Some(app) = app_bundle(target) {
-        return app.join("Contents/MacOS/squirreldisk");
+        return app.join("Contents/MacOS/dcx");
     }
     target.to_path_buf()
 }
@@ -370,16 +370,16 @@ mod tests {
     #[test]
     fn linux_folder_menu_on_and_off() {
         let data = std::env::temp_dir().join(format!("sqd-menu-{}", std::process::id()));
-        let target = Path::new("/opt/My Apps/SquirrelDisk.AppImage");
-        set_folder_menu_in(&data, true, target, "Scan with SquirrelDisk", |p| p == "nautilus").unwrap();
-        let entry = std::fs::read_to_string(data.join("applications/squirreldisk-folder.desktop")).unwrap();
-        assert!(entry.contains("Exec=\"/opt/My Apps/SquirrelDisk.AppImage\" %f"), "{entry}");
+        let target = Path::new("/opt/My Apps/DCX.AppImage");
+        set_folder_menu_in(&data, true, target, "Scan with DCX", |p| p == "nautilus").unwrap();
+        let entry = std::fs::read_to_string(data.join("applications/dcx-folder.desktop")).unwrap();
+        assert!(entry.contains("Exec=\"/opt/My Apps/DCX.AppImage\" %f"), "{entry}");
         assert!(entry.contains("MimeType=inode/directory;"));
-        assert!(data.join("nautilus/scripts/Scan with SquirrelDisk").is_file());
+        assert!(data.join("nautilus/scripts/Scan with DCX").is_file());
         assert!(!data.join("nemo").exists(), "Nemo isn't installed");
-        set_folder_menu_in(&data, false, target, "Scan with SquirrelDisk", |_| true).unwrap();
-        assert!(!data.join("applications/squirreldisk-folder.desktop").exists());
-        assert!(!data.join("nautilus/scripts/Scan with SquirrelDisk").exists());
+        set_folder_menu_in(&data, false, target, "Scan with DCX", |_| true).unwrap();
+        assert!(!data.join("applications/dcx-folder.desktop").exists());
+        assert!(!data.join("nautilus/scripts/Scan with DCX").exists());
         let _ = std::fs::remove_dir_all(data);
     }
 }
