@@ -1,9 +1,9 @@
 //! macOS window chrome helpers.
 
-/// Vertical center (points from the top of the window) and right edge of the
-/// traffic-light buttons, read from AppKit so the custom top bar lines up
-/// exactly on every macOS version.
-pub fn traffic_lights(frame: &eframe::Frame) -> Option<(f32, f32)> {
+/// (Vertical centre from the top, right edge, left edge) of the traffic-light
+/// buttons, read from AppKit so the custom top bar lines up on every macOS
+/// version.
+pub fn traffic_lights(frame: &eframe::Frame) -> Option<(f32, f32, f32)> {
     use objc2_app_kit::{NSView, NSWindowButton};
     use raw_window_handle::{HasWindowHandle, RawWindowHandle};
     let handle = frame.window_handle().ok()?;
@@ -19,7 +19,7 @@ pub fn traffic_lights(frame: &eframe::Frame) -> Option<(f32, f32)> {
     let c = close.convertRect_toView(close.bounds(), None);
     let z = zoom.convertRect_toView(zoom.bounds(), None);
     let center_from_top = height - (c.origin.y + c.size.height / 2.0);
-    Some((center_from_top as f32, (z.origin.x + z.size.width) as f32))
+    Some((center_from_top as f32, (z.origin.x + z.size.width) as f32, c.origin.x as f32))
 }
 
 /// Moves the three traffic-light buttons by (dx, dy) points (dy positive =

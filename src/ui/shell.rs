@@ -20,6 +20,11 @@ pub const TOOLBAR_H: f32 = 36.0;
 /// Its vertical centre is where the macOS traffic lights are nudged down to, so
 /// the whole row sits on one line.
 pub const TOPBAR_H: f32 = 32.0;
+/// x (window points) of the sidebar nav icon column's left edge: item inset
+/// `12` + `14` pad + icon centred `9` into a `16px` box → `27`. The macOS
+/// traffic lights are aligned to this so the header and the menu read as one
+/// column. Tune this single number to slide the whole cluster left/right.
+pub const NAV_ICON_LEFT: f32 = 27.0;
 
 impl App {
     /// Draws the sidebar and the sheet; returns the rect the screens lay out in.
@@ -96,14 +101,15 @@ impl App {
     fn sidebar_ui(&mut self, ui: &mut Ui, side: Rect) {
         let theme = self.theme.clone();
         // No brand row on any platform (matches Windows): the menu starts
-        // right under the window controls.
+        // under the window controls. Give the macOS/Linux toolbar row (whose
+        // buttons were nudged down onto `TOPBAR_H`) a clear gap below it.
         let mut y = side.top()
             + if cfg!(target_os = "macos") {
-                46.0
+                TOPBAR_H + 26.0
             } else if cfg!(windows) {
                 TOOLBAR_H + 12.0
             } else {
-                46.0
+                TOPBAR_H + 26.0
             };
 
         // dashboard

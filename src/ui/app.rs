@@ -348,9 +348,6 @@ pub struct App {
     pub font_scripts: u32,
     /// Frames spent placing the window on the screen (done at 255).
     pub placing: u8,
-    /// The macOS traffic lights were nudged to their new spot (once).
-    #[cfg(target_os = "macos")]
-    pub lights_shifted: bool,
     /// Folder to scan once the window is up (`squirreldisk <folder>`).
     pub open_at_start: Option<PathBuf>,
     /// Installing the `squirreldisk` command from Settings: the outcome.
@@ -502,8 +499,6 @@ impl App {
             open_at_start: None,
             cli_job: None,
             placing: if std::env::var("SQD_WINDOW").is_ok() { u8::MAX } else { 0 },
-            #[cfg(target_os = "macos")]
-            lights_shifted: false,
             font_scripts: 0,
             chrome: if cfg!(target_os = "macos") { (15.0, 68.0) } else { (22.0, 0.0) },
             settings,
@@ -944,21 +939,20 @@ impl eframe::App for App {
     fn ui(&mut self, ui: &mut egui::Ui, frame: &mut eframe::Frame) {
         let ctx = ui.ctx().clone();
         #[cfg(target_os = "macos")]
-        if let Some((c0, _)) = super::macos::traffic_lights(frame) {
-            // Nudge the lights down onto the sheet's toolbar line. The read is
-            // live, so this converges and re-corrects if AppKit resets them on
-            // a resize. The one-off +6 x inset only applies on the first hit.
-            let target = super::shell::INSET_M + super::shell::TOPBAR_H / 2.0;
-            let dy = (target - c0) as f64;
-            let dx = if self.lights_shifted { 0.0 } else { 6.0 };
-            if dx != 0.0 || dy.abs() > 0.5 {
-                if super::macos::shift_traffic_lights(frame, dx, dy) {
-                    self.lights_shifted = true;
-                }
+        if let Some((c0, _c1, cl)) = super::macos::traffic_lights(frame) {
+            // Nudge the lights onto the sheet's toolbar line: down to the row's
+            // vertical centre and right so the cluster's left edge aligns with
+            // the sidebar nav icons. Both come from the LIVE read, so they
+            // converge and re-correct if AppKit resets the buttons on a resize.
+            let target_y = super::shell::INSET_M + super::shell::TOPBAR_H / 2.0;
+            let dy = (target_y - c0) as f64;
+            let dx = (super::shell::NAV_ICON_LEFT - cl) as f64;
+            if dx.abs() > 0.5 || dy.abs() > 0.5 {
+                super::macos::shift_traffic_lights(frame, dx, dy);
             }
         }
-        if let Some(c) = super::macos::traffic_lights(frame) {
-            self.chrome = c;
+        if let Some((cy, cx, _)) = super::macos::traffic_lights(frame) {
+            self.chrome = (cy, cx);
         }
         #[cfg(windows)]
         super::win::install_resize_frame(frame);
