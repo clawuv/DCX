@@ -8,10 +8,11 @@
 
 use std::sync::atomic::{AtomicBool, AtomicIsize, Ordering};
 use windows_sys::Win32::Foundation::{HWND, LPARAM, LRESULT, RECT, WPARAM};
+use windows_sys::Win32::Graphics::Gdi::{GetMonitorInfoW, MonitorFromWindow, MONITORINFO, MONITOR_DEFAULTTONEAREST};
 use windows_sys::Win32::UI::HiDpi::{GetDpiForWindow, GetSystemMetricsForDpi};
 use windows_sys::Win32::UI::WindowsAndMessaging::{
-    CallWindowProcW, GetWindowLongPtrW, GetWindowRect, IsZoomed, SetWindowLongPtrW, SetWindowPos, GWL_STYLE,
-    GWLP_WNDPROC, HTBOTTOM, HTBOTTOMLEFT, HTBOTTOMRIGHT, HTLEFT, HTRIGHT, HTTOP, HTTOPLEFT, HTTOPRIGHT,
+    CallWindowProcW, GetWindowLongPtrW, GetWindowRect, IsZoomed, NCCALCSIZE_PARAMS, SetWindowLongPtrW, SetWindowPos,
+    GWL_STYLE, GWLP_WNDPROC, HTBOTTOM, HTBOTTOMLEFT, HTBOTTOMRIGHT, HTLEFT, HTRIGHT, HTTOP, HTTOPLEFT, HTTOPRIGHT,
     SM_CXPADDEDBORDER, SM_CXSIZEFRAME, SWP_FRAMECHANGED, SWP_NOACTIVATE, SWP_NOMOVE, SWP_NOSIZE, SWP_NOZORDER,
     WS_THICKFRAME,
 };
@@ -64,8 +65,17 @@ pub fn resize_border() -> f32 {
 // SAFETY: forwards to the winit proc saved at install time.
 unsafe extern "system" fn wnd_proc(hwnd: HWND, msg: u32, wp: WPARAM, lp: LPARAM) -> LRESULT {
     // keep the sizing border invisible: the client area is the whole window,
-    // and the resize zones are the outer pixels claimed in WM_NCHITTEST
+    // and the resize zones are the outer pixels claimed in WM_NCHITTEST.
+    // Windows still sizes a maximized borderless window to the work area
+    // plus the frame (ptMaxSize is ignored), so the maximized client is
+    // clamped to the work area here — otherwise 8px of content sit off
+    // screen on every side.
     if msg == WM_NCCALCSIZE && wp != 0 {
+        if IsZoomed(hwnd) != 0 {
+            if let Some(work) = work_area(hwnd) {
+                (*(lp as *mut NCCALCSIZE_PARAMS)).rgrc[0] = work;
+            }
+        }
         return 0;
     }
     if msg == WM_NCHITTEST {
@@ -81,6 +91,18 @@ unsafe extern "system" fn wnd_proc(hwnd: HWND, msg: u32, wp: WPARAM, lp: LPARAM)
     // ours took over; both are pointer-sized.
     let proc: unsafe extern "system" fn(HWND, u32, WPARAM, LPARAM) -> LRESULT = std::mem::transmute(old);
     CallWindowProcW(Some(proc), hwnd, msg, wp, lp)
+}
+
+/// The work area (without the taskbar) of the monitor the window is on.
+// SAFETY: plain Win32 queries on our own window.
+unsafe fn work_area(hwnd: HWND) -> Option<RECT> {
+    let mon = MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST);
+    let mut info: MONITORINFO = std::mem::zeroed();
+    info.cbSize = std::mem::size_of::<MONITORINFO>() as u32;
+    if mon.is_null() || GetMonitorInfoW(mon, &mut info) == 0 {
+        return None;
+    }
+    Some(info.rcWork)
 }
 
 /// Standard resize hit codes for the window's outer pixels, or None to let
