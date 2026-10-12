@@ -145,7 +145,9 @@ impl App {
         let crumbs: Vec<(String, Option<View>)> = {
             let s = &self.sessions[si];
             let t = s.tree.read().unwrap();
-            let mut v: Vec<(String, Option<View>)> = vec![(tr("Disks").into(), None)];
+            // on macOS the breadcrumb root reads "Disks" in every language
+            let root = if cfg!(target_os = "macos") { "Disks".to_string() } else { tr("Disks").into() };
+            let mut v: Vec<(String, Option<View>)> = vec![(root, None)];
             for id in t.ancestry(s.view.node) {
                 let name = if id == t.root { s.title.clone() } else { t.get(id).name.to_string() };
                 v.push((name, Some(View::node(id))));
