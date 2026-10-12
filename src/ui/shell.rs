@@ -16,6 +16,10 @@ pub const INSET_M: f32 = 8.0;
 /// Height of the Windows top toolbar: the undecorated window's title bar,
 /// drawn on the sidebar colour so the two read as one chrome.
 pub const TOOLBAR_H: f32 = 36.0;
+/// Height of the floating top toolbar strip (`‹ ›` breadcrumb / rescan / gear).
+/// Its vertical centre is where the macOS traffic lights are nudged down to, so
+/// the whole row sits on one line.
+pub const TOPBAR_H: f32 = 32.0;
 
 impl App {
     /// Draws the sidebar and the sheet; returns the rect the screens lay out in.
@@ -47,15 +51,16 @@ impl App {
             p.rect_filled(content, cr(12.0), theme.inset_bg());
         }
 
-        // title-bar buttons just right of the traffic lights (toggle + new
-        // scan); drawn after the sheet so they stay on top when the sidebar
-        // is collapsed and the sheet slides beneath them
+        // title-bar buttons (toggle + new scan), on the same line as the
+        // session top bar (`‹ ›` / rescan / gear live at the content sheet's
+        // top strip, `bar_h = TOPBAR_H`), not the traffic lights' row above
+        // it. Drawn after the sheet so they stay on top when the sidebar collapses.
         let (bx, by) = if cfg!(target_os = "macos") {
-            (self.chrome.1 + 28.0, self.chrome.0)
+            (self.chrome.1 + 28.0, content.top() + TOPBAR_H / 2.0)
         } else if cfg!(windows) {
             (30.0, TOOLBAR_H / 2.0)
         } else {
-            (30.0, 22.0)
+            (30.0, content.top() + TOPBAR_H / 2.0)
         };
         let tog = Rect::from_center_size(Pos2::new(bx, by), Vec2::splat(28.0));
         if widgets::icon_button_bold(ui, tog, Id::new("sidebar-toggle"), Icon::Panel, &theme, true).clicked() {

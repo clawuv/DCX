@@ -84,8 +84,9 @@ impl App {
         }
 
         // --- top bar
-        // The bar is centred on the traffic lights (macOS) so everything sits on one line.
-        let bar_h = self.chrome.0 * 2.0;
+        // Fixed height matching the shell's title-bar buttons so the breadcrumb
+        // and the macOS traffic lights (nudged down here) all sit on one line.
+        let bar_h = super::shell::TOPBAR_H;
         let bar = Rect::from_min_size(screen.min, Vec2::new(screen.width(), bar_h));
         self.top_bar(ui, bar, si);
 
