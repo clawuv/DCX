@@ -7,7 +7,7 @@ use super::theme::{lerp_color, with_alpha};
 use super::widgets::{self, bold, cr, Icon};
 use crate::i18n::tr;
 use crate::sound::Sfx;
-use eframe::egui::{self, Align2, Color32, Id, Pos2, Rect, Sense, Stroke, Ui, Vec2};
+use eframe::egui::{self, Align2, Color32, Id, Pos2, Rect, Sense, Ui, Vec2};
 use std::sync::atomic::Ordering;
 
 pub const SIDEBAR_W: f32 = 204.0;
@@ -90,32 +90,16 @@ impl App {
 
     fn sidebar_ui(&mut self, ui: &mut Ui, side: Rect) {
         let theme = self.theme.clone();
-        // Windows: no brand row — the toolbar is the title bar, and its left
-        // side already carries the sidebar toggle and the new-scan button.
+        // No brand row on any platform (matches Windows): the menu starts
+        // right under the window controls.
         let mut y = side.top()
             + if cfg!(target_os = "macos") {
                 46.0
             } else if cfg!(windows) {
                 TOOLBAR_H + 12.0
             } else {
-                16.0
+                46.0
             };
-
-        // brand
-        #[cfg(not(windows))]
-        {
-            let logo = Rect::from_min_size(Pos2::new(side.left() + 18.0, y), Vec2::splat(28.0));
-            let tex = self.logo.get_or_insert_with(|| {
-                let px = 184;
-                let pm = crate::icon::render(px as u32, crate::icon::Frame::IDLE, false);
-                let img = egui::ColorImage::from_rgba_unmultiplied([px, px], &crate::icon::rgba(&pm));
-                ui.ctx().load_texture("app-icon", img, egui::TextureOptions::LINEAR)
-            });
-            let p = ui.painter();
-            p.image(tex.id(), logo, Rect::from_min_max(Pos2::ZERO, Pos2::new(1.0, 1.0)), Color32::WHITE);
-            p.text(Pos2::new(side.left() + 54.0, y + 14.0), Align2::LEFT_CENTER, "SquirrelDisk", widgets::brand(15.0), theme.text);
-            y += 46.0;
-        }
 
         // dashboard
         let item = Rect::from_min_size(Pos2::new(side.left() + 12.0, y), Vec2::new(side.width() - 16.0, 36.0));

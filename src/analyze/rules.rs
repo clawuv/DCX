@@ -4,7 +4,7 @@
 //! scan, plus their sizes. File contents are never read.
 
 use super::{Category, Rationale, Suggestion, Src};
-use crate::safety::{Os, Rules};
+use crate::safety::Rules;
 use crate::tree::{Kind, Tree, NONE};
 
 /// Tunables for a run.
@@ -133,7 +133,7 @@ mod tests {
     fn suggestions(tree: &Tree) -> Vec<Suggestion> {
         // fixed ruleset: the fixture trees use POSIX paths ("/System", "/r"),
         // which only mean something under the Mac/Linux rulesets
-        analyze(tree, &Limits::default(), &Rules::for_os(Os::Mac, None))
+        analyze(tree, &Limits::default(), &Rules::for_os(crate::safety::Os::Mac, None))
     }
 
     #[test]

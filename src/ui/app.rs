@@ -340,7 +340,6 @@ pub struct App {
     pub sponsors: crate::sponsor::Sponsors,
     /// App icon as a texture, for the sidebar brand row (not drawn on Windows).
     #[cfg_attr(windows, allow(dead_code))]
-    pub logo: Option<egui::TextureHandle>,
     pub dock: DockState,
     pub director: Option<super::director::Director>,
     /// Named rects of clickable things, for the demo director.
@@ -494,7 +493,6 @@ impl App {
             home_content_h: 0.0,
             update_checked: Instant::now(),
             sponsors: crate::sponsor::Sponsors::start(settings.sponsor_measurement),
-            logo: None,
             dock: DockState::default(),
             director: super::director::Director::from_env(),
             marks: Default::default(),
