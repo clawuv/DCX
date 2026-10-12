@@ -1,0 +1,4 @@
+# eframe/egui 0.36 and sysinfo 0.39 need rustc >= 1.95; pin the toolchain so
+# a plain `cargo run` picks it up even when the default stable is older.
+[toolchain]
+channel = "1.95"

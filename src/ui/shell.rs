@@ -4,15 +4,18 @@
 use super::app::{App, Modal, Screen, Target};
 use super::home::TITLEBAR_INSET;
 use super::theme::{lerp_color, with_alpha};
-use super::widgets::{self, bold, brand, cr, Icon};
+use super::widgets::{self, bold, cr, Icon};
 use crate::i18n::tr;
 use crate::sound::Sfx;
-use eframe::egui::{self, Align2, Color32, Id, Pos2, Rect, Sense, Ui, Vec2};
+use eframe::egui::{self, Align2, Color32, Id, Pos2, Rect, Sense, Stroke, Ui, Vec2};
 use std::sync::atomic::Ordering;
 
 pub const SIDEBAR_W: f32 = 204.0;
 /// Gap between the sheet and the window edges / the sidebar.
 pub const INSET_M: f32 = 8.0;
+/// Height of the Windows top toolbar: the undecorated window's title bar,
+/// drawn on the sidebar colour so the two read as one chrome.
+pub const TOOLBAR_H: f32 = 36.0;
 
 impl App {
     /// Draws the sidebar and the sheet; returns the rect the screens lay out in.
@@ -22,15 +25,20 @@ impl App {
         let w = SIDEBAR_W * t;
         // the whole title-bar strip drags the window; screens draw their own
         // buttons after this, so those still get the clicks
-        self.window_drag_area(ui, Rect::from_min_size(screen.min, Vec2::new(screen.width(), TITLEBAR_INSET + 44.0)));
+        let drag_h = if cfg!(windows) { TOOLBAR_H } else { TITLEBAR_INSET + 44.0 };
+        self.window_drag_area(ui, Rect::from_min_size(screen.min, Vec2::new(screen.width(), drag_h)));
 
         if w > 1.0 {
             let side = Rect::from_min_max(screen.min, Pos2::new(screen.left() + w, screen.bottom()));
             self.sidebar_ui(ui, side);
         }
 
+        // Windows: the sheet starts below the toolbar strip; everywhere else
+        // it reaches to the top of the window (only the sidebar column is
+        // the title bar there).
+        let sheet_top = if cfg!(windows) { TOOLBAR_H + INSET_M } else { INSET_M };
         let content = Rect::from_min_max(
-            Pos2::new(screen.left() + w + INSET_M, screen.top() + INSET_M),
+            Pos2::new(screen.left() + w + INSET_M, screen.top() + sheet_top),
             Pos2::new(screen.right() - INSET_M, screen.bottom() - INSET_M),
         );
         {
@@ -44,6 +52,8 @@ impl App {
         // is collapsed and the sheet slides beneath them
         let (bx, by) = if cfg!(target_os = "macos") {
             (self.chrome.1 + 28.0, self.chrome.0)
+        } else if cfg!(windows) {
+            (30.0, TOOLBAR_H / 2.0)
         } else {
             (30.0, 22.0)
         };
@@ -57,6 +67,10 @@ impl App {
         if widgets::icon_button_bold(ui, add, Id::new("shell-add"), Icon::Plus, &theme, true).clicked() {
             self.pick_folder_and_scan();
         }
+        // Windows: the toolbar strip is the title bar, so it carries the
+        // caption controls; drawn after the drag area so they get its clicks.
+        #[cfg(windows)]
+        self.caption_buttons(ui, screen.right());
         content
     }
 
@@ -67,6 +81,8 @@ impl App {
             0.0
         } else if cfg!(target_os = "macos") {
             self.chrome.1 + 60.0
+        } else if cfg!(windows) {
+            0.0 // the toolbar keeps the buttons off the sheet
         } else {
             80.0
         }
@@ -74,9 +90,19 @@ impl App {
 
     fn sidebar_ui(&mut self, ui: &mut Ui, side: Rect) {
         let theme = self.theme.clone();
-        let mut y = side.top() + if cfg!(target_os = "macos") { 46.0 } else { 16.0 };
+        // Windows: no brand row — the toolbar is the title bar, and its left
+        // side already carries the sidebar toggle and the new-scan button.
+        let mut y = side.top()
+            + if cfg!(target_os = "macos") {
+                46.0
+            } else if cfg!(windows) {
+                TOOLBAR_H + 12.0
+            } else {
+                16.0
+            };
 
         // brand
+        #[cfg(not(windows))]
         {
             let logo = Rect::from_min_size(Pos2::new(side.left() + 18.0, y), Vec2::splat(28.0));
             let tex = self.logo.get_or_insert_with(|| {
@@ -87,7 +113,7 @@ impl App {
             });
             let p = ui.painter();
             p.image(tex.id(), logo, Rect::from_min_max(Pos2::ZERO, Pos2::new(1.0, 1.0)), Color32::WHITE);
-            p.text(Pos2::new(side.left() + 54.0, y + 14.0), Align2::LEFT_CENTER, "SquirrelDisk", brand(15.0), theme.text);
+            p.text(Pos2::new(side.left() + 54.0, y + 14.0), Align2::LEFT_CENTER, "SquirrelDisk", widgets::brand(15.0), theme.text);
             y += 46.0;
         }
 
@@ -143,6 +169,79 @@ impl App {
             self.open_modal(Modal::Settings);
         }
     }
+
+    /// Min / max / close for the undecorated Windows window, pinned to the
+    /// right end of the toolbar. Like every other control here they are
+    /// hand-drawn; close hovers in the danger colour, Windows-style.
+    #[cfg(windows)]
+    fn caption_buttons(&mut self, ui: &mut Ui, right: f32) {
+        let theme = self.theme.clone();
+        let maxed = ui.input(|i| i.viewport().maximized.unwrap_or(false));
+        let h = TOOLBAR_H;
+        // keep the invisible resize frame at the window's right edge clear
+        let edge = super::win::resize_border();
+        let mut rect = Rect::from_min_size(Pos2::new(right - edge - 46.0, 0.0), Vec2::new(46.0, h));
+        if caption_button(ui, rect, Id::new("cap-close"), Cap::Close, &theme).clicked() {
+            ui.ctx().send_viewport_cmd(egui::ViewportCommand::Close);
+        }
+        rect = rect.translate(Vec2::new(-46.0, 0.0));
+        if caption_button(ui, rect, Id::new("cap-max"), if maxed { Cap::Restore } else { Cap::Max }, &theme).clicked() {
+            ui.ctx().send_viewport_cmd(egui::ViewportCommand::Maximized(!maxed));
+        }
+        rect = rect.translate(Vec2::new(-46.0, 0.0));
+        if caption_button(ui, rect, Id::new("cap-min"), Cap::Min, &theme).clicked() {
+            ui.ctx().send_viewport_cmd(egui::ViewportCommand::Minimized(true));
+        }
+    }
+}
+
+/// The caption glyphs, drawn by hand like every other icon.
+#[cfg(windows)]
+#[derive(Clone, Copy, PartialEq)]
+enum Cap {
+    Min,
+    Max,
+    Restore,
+    Close,
+}
+
+#[cfg(windows)]
+fn caption_button(ui: &mut Ui, rect: Rect, id: Id, glyph: Cap, theme: &super::theme::Theme) -> egui::Response {
+    let resp = ui.interact(rect, id, Sense::click());
+    let h = ui.ctx().animate_bool_with_time(id.with("h"), resp.hovered(), 0.08);
+    let p = ui.painter();
+    let danger = glyph == Cap::Close;
+    if h > 0.0 {
+        let bg = if danger {
+            lerp_color(Color32::TRANSPARENT, theme.danger, h)
+        } else {
+            with_alpha(theme.text, 0.08 * h)
+        };
+        p.rect_filled(rect, 0.0, bg);
+    }
+    let col = if danger && h > 0.35 { Color32::WHITE } else { lerp_color(theme.text_dim, theme.text, h) };
+    let st = Stroke::new(1.6, col);
+    let c = rect.center();
+    let s = 10.0;
+    match glyph {
+        Cap::Min => {
+            p.line_segment([Pos2::new(c.x - s / 2.0, c.y + 1.0), Pos2::new(c.x + s / 2.0, c.y + 1.0)], st);
+        }
+        Cap::Max => {
+            p.rect_stroke(Rect::from_center_size(c, Vec2::splat(s)), 1.0, st, egui::StrokeKind::Inside);
+        }
+        Cap::Restore => {
+            let d = 3.5;
+            p.rect_stroke(Rect::from_center_size(c + Vec2::new(d, -d), Vec2::splat(s - 1.0)), 1.0, st, egui::StrokeKind::Inside);
+            p.rect_stroke(Rect::from_center_size(c - Vec2::new(d, -d) / 2.0, Vec2::splat(s - 1.0)), 1.0, st, egui::StrokeKind::Inside);
+        }
+        Cap::Close => {
+            let d = 0.42 * s;
+            p.line_segment([c + Vec2::new(-d, -d), c + Vec2::new(d, d)], st);
+            p.line_segment([c + Vec2::new(d, -d), c + Vec2::new(-d, d)], st);
+        }
+    }
+    resp
 }
 
 /// One sidebar row. Returns (clicked, close-clicked).

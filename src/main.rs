@@ -31,7 +31,7 @@ mod update;
 mod watch;
 
 /// GitHub repository used for releases, self-update and agent downloads.
-pub const GITHUB_REPO: &str = "adileo/squirreldisk";
+pub const GITHUB_REPO: &str = "clawuv/DCX";
 
 fn main() {
     // Invoked by ssh as SSH_ASKPASS helper: answer the prompt and leave.
@@ -166,6 +166,12 @@ fn run_gui(folder: Option<std::path::PathBuf>) {
     }
     if cfg!(target_os = "macos") {
         viewport = viewport.with_fullsize_content_view(true).with_titlebar_shown(false).with_title_shown(false);
+    }
+    // Windows: the shell draws its own toolbar (sidebar-coloured, nav buttons
+    // at its left, caption controls at its right) instead of the native
+    // title bar, which cannot match the app background.
+    if cfg!(windows) {
+        viewport = viewport.with_decorations(false);
     }
     // centred at the default size; the app then sizes it to the screen
     let options = eframe::NativeOptions { viewport, multisampling: 0, centered: true, ..Default::default() };

@@ -41,7 +41,8 @@ impl App {
         let page_top = content.top() - self.home_scroll;
         // when the sidebar is collapsed the floating title-bar buttons sit
         // over the sheet's top-left corner: start the header below them
-        let mut y = page_top + if self.settings.sidebar { 22.0 } else { 48.0 };
+        // (Windows keeps them in the toolbar, clear of the sheet)
+        let mut y = page_top + if self.settings.sidebar || cfg!(windows) { 22.0 } else { 48.0 };
 
         // --- title row
         {

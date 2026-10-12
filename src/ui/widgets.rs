@@ -15,6 +15,8 @@ pub fn font(size: f32) -> FontId {
 pub fn bold(size: f32) -> FontId {
     FontId::new(size, FontFamily::Name("bold".into()))
 }
+/// Brand wordmark font; only the sidebar brand row (not on Windows) uses it.
+#[cfg_attr(windows, allow(dead_code))]
 pub fn brand(size: f32) -> FontId {
     FontId::new(size, FontFamily::Name("brand".into()))
 }

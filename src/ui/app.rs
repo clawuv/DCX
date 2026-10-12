@@ -338,7 +338,8 @@ pub struct App {
     /// Last time we asked GitHub for a new version.
     pub update_checked: Instant,
     pub sponsors: crate::sponsor::Sponsors,
-    /// App icon as a texture, for the home header.
+    /// App icon as a texture, for the sidebar brand row (not drawn on Windows).
+    #[cfg_attr(windows, allow(dead_code))]
     pub logo: Option<egui::TextureHandle>,
     pub dock: DockState,
     pub director: Option<super::director::Director>,
@@ -943,6 +944,8 @@ impl eframe::App for App {
         if let Some(c) = super::macos::traffic_lights(frame) {
             self.chrome = c;
         }
+        #[cfg(windows)]
+        super::win::install_resize_frame(frame);
         let _ = &frame;
         self.place_window(&ctx, frame);
         if let Some(folder) = self.open_at_start.take() {
