@@ -857,7 +857,9 @@ impl App {
             }
         }
 
-        // footer: hover info / reclaimable total, plus "Collect all".
+        // footer: hover info / reclaimable total on its own row, the actions
+        // aligned on the row below ("Collect all" flush right, next to the
+        // stale-only "Re-analyze").
         {
             let p = ui.painter();
             let fy = inner.bottom() - footer_h + 8.0;
@@ -873,10 +875,10 @@ impl App {
             } else {
                 String::new()
             };
-            let info = widgets::truncate(p, &info, &font(11.0), inner.width() - 128.0);
+            let info = widgets::truncate(p, &info, &font(11.0), inner.width());
             p.text(Pos2::new(inner.left(), fy + 12.0), Align2::LEFT_CENTER, info, font(11.0), theme.text_faint);
         }
-        let btn = Rect::from_min_size(Pos2::new(inner.right() - 116.0, inner.bottom() - footer_h + 8.0), Vec2::new(116.0, 30.0));
+        let btn = Rect::from_min_size(Pos2::new(inner.right() - 116.0, inner.bottom() - 32.0), Vec2::new(116.0, 30.0));
         let any_bulk = rows.iter().any(|r| r.is_safe_bulk());
         if widgets::button_ex(ui, btn, Id::new(("sug-all", si)), tr("Collect all"), Some(Icon::Plus), BtnStyle::Primary, &theme, any_bulk).clicked() {
             self.collect_all_safe(si);
@@ -906,7 +908,8 @@ impl App {
     }
 
     /// Adds every high-confidence, non-caution suggestion to the collector.
-    pub fn collect_all_safe(&mut self, si: usize) {        let nodes: Vec<u32> = {
+    pub fn collect_all_safe(&mut self, si: usize) {
+        let nodes: Vec<u32> = {
             let s = &self.sessions[si];
             let t = s.tree.read().unwrap();
             s.analysis.snapshot().into_iter().filter(|x| x.is_safe_bulk() && t.is_alive(x.node)).map(|x| x.node).collect()
