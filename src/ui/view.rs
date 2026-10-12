@@ -613,10 +613,13 @@ impl App {
         let expanded = list_expanded0;
         let show = if overflow && !expanded { max_rows - 1 } else { n_kids };
         let scrolling = expanded && overflow;
-        let total_h = show as f32 * row_h;
+        // When expanded we append a trailing "Show less" row inside the scroll.
+        let total_h = (show as f32 + if scrolling { 1.0 } else { 0.0 }) * row_h;
         let max_scroll = (total_h - avail).max(0.0);
         let mut scroll = list_scroll0.clamp(0.0, max_scroll);
-        let list_clip = Rect::from_min_max(Pos2::new(inner.left(), top), Pos2::new(inner.right(), list_bottom));
+        // Clip wide enough to include the rows' ±8 px hover overhang, so the
+        // rounded pill ends aren't cut off (matches the collapsed "more" row).
+        let list_clip = Rect::from_min_max(Pos2::new(inner.left() - 9.0, top), Pos2::new(inner.right() + 9.0, list_bottom));
         if scrolling && self.modal.is_none() && ui.rect_contains_pointer(list_clip) {
             let d = ui.input(|i| i.smooth_scroll_delta.y);
             if d != 0.0 {
@@ -656,6 +659,7 @@ impl App {
         let mut new_hover = None;
         let mut action: Option<(u32, Kind, u8)> = None; // 0 click, 1 double, 2 context
         let mut expand = false;
+        let mut collapse = false;
         let prev_clip = ui.clip_rect();
         if scrolling {
             ui.set_clip_rect(list_clip);
@@ -715,6 +719,20 @@ impl App {
             }
         }
         if scrolling {
+            let y = top + show as f32 * row_h - scroll;
+            let rr = Rect::from_min_size(Pos2::new(inner.left() - 8.0, y), Vec2::new(inner.width() + 16.0, row_h - 2.0));
+            let id = Id::new(("row-less", si));
+            let resp = ui.interact(rr, id, Sense::click());
+            let h = ui.ctx().animate_bool_with_time(id.with("h"), resp.hovered(), 0.1);
+            if resp.hovered() {
+                ui.ctx().set_cursor_icon(egui::CursorIcon::PointingHand);
+            }
+            let p = ui.painter();
+            p.rect_filled(rr, cr(8.0), with_alpha(theme.surface_hi, h));
+            p.text(rr.center() + Vec2::new(0.0, 1.0), Align2::CENTER_CENTER, tr("Show less"), font(13.0), theme.text_dim);
+            if resp.clicked() {
+                collapse = true;
+            }
             ui.set_clip_rect(prev_clip);
         }
         if let Some((n, rest)) = more {
@@ -773,6 +791,9 @@ impl App {
         s.list_hover = new_hover;
         if expand {
             s.list_expanded = true;
+            s.list_scroll = 0.0;
+        } else if collapse {
+            s.list_expanded = false;
             s.list_scroll = 0.0;
         } else {
             s.list_scroll = scroll;
@@ -868,13 +889,15 @@ impl App {
         // Collapsed (like the Contents panel): reserve the last row for the
         // "N more items…" button. Expanded: the whole list scrolls.
         let show = if overflow && !expanded { max_rows - 1 } else { rows.len() };
-        let total_h = show as f32 * row_h;
+        let scrolling = expanded && overflow;
+        // When expanded we append a trailing "Show less" row inside the scroll.
+        let total_h = (show as f32 + if scrolling { 1.0 } else { 0.0 }) * row_h;
         let max_scroll = (total_h - avail).max(0.0);
 
         // Wheel over the list scrolls through the suggestions (expanded only);
-        // the chart keeps the wheel everywhere else.
-        let list_clip = Rect::from_min_max(Pos2::new(inner.left(), top), Pos2::new(inner.right(), list_bottom));
-        let scrolling = expanded && overflow;
+        // the chart keeps the wheel everywhere else. Clip wide enough to keep
+        // the rounded pill hover ends from being cut off.
+        let list_clip = Rect::from_min_max(Pos2::new(inner.left() - 9.0, top), Pos2::new(inner.right() + 9.0, list_bottom));
         if scrolling && self.modal.is_none() && ui.rect_contains_pointer(list_clip) {
             let d = ui.input(|i| i.smooth_scroll_delta.y);
             if d != 0.0 {
@@ -886,6 +909,7 @@ impl App {
 
         let mut action: Option<u32> = None;
         let mut expand_more = false;
+        let mut collapse = false;
         let prev_clip = ui.clip_rect();
         if scrolling {
             ui.set_clip_rect(list_clip);
@@ -928,6 +952,20 @@ impl App {
             }
         }
         if scrolling {
+            let y = top + show as f32 * row_h - scroll;
+            let rr = Rect::from_min_size(Pos2::new(inner.left() - 8.0, y), Vec2::new(inner.width() + 16.0, row_h - 2.0));
+            let id = Id::new(("sug-less", si));
+            let resp = ui.interact(rr, id, Sense::click());
+            let h = ui.ctx().animate_bool_with_time(id.with("h"), resp.hovered(), 0.1);
+            if resp.hovered() {
+                ui.ctx().set_cursor_icon(egui::CursorIcon::PointingHand);
+            }
+            let p = ui.painter();
+            p.rect_filled(rr, cr(8.0), with_alpha(theme.surface_hi, h));
+            p.text(rr.center() + Vec2::new(0.0, 1.0), Align2::CENTER_CENTER, tr("Show less"), font(13.0), theme.text_dim);
+            if resp.clicked() {
+                collapse = true;
+            }
             ui.set_clip_rect(prev_clip);
         }
 
@@ -953,6 +991,10 @@ impl App {
             self.sessions[si].sug_expanded = true;
             self.sessions[si].sug_scroll = 0.0;
             self.sfx(Sfx::Blip);
+        } else if collapse {
+            self.sessions[si].sug_expanded = false;
+            self.sessions[si].sug_scroll = 0.0;
+            self.sfx(Sfx::BlipDown);
         }
 
         // Scrollbar, only when expanded and the list overflows.
