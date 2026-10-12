@@ -6,7 +6,7 @@ use super::shader;
 use super::sunburst::{self, Geometry, SegKind, SegStyle, View};
 use super::theme::{lerp_color, lighten, with_alpha, Theme};
 use super::widgets::{self, bold, cr, display, font, BtnStyle, Icon};
-use crate::analyze::{Category, Rationale, Src};
+use crate::analyze::{Category, Src};
 use crate::i18n::{tr, tr_status, trf};
 use crate::safety::{Os, Rules};
 use crate::scan::local::expand_small;
@@ -51,14 +51,6 @@ fn category_color(cat: Category, theme: &Theme) -> Color32 {
         Category::Other => 0.52,
     };
     theme.wheel_at(t)
-}
-
-/// A suggestion's rationale, ready to show.
-fn rationale_text(s: &crate::analyze::Suggestion) -> String {
-    match &s.rationale {
-        Rationale::Key(k) => tr(k).to_string(),
-        Rationale::Text(t) => t.clone(),
-    }
 }
 
 impl App {
@@ -576,6 +568,8 @@ impl App {
         }
 
         let treemap_mode = self.settings.chart_style == "treemap";
+        let list_expanded0 = self.sessions[si].list_expanded;
+        let list_scroll0 = self.sessions[si].list_scroll;
         let s = &self.sessions[si];
         let pv = s.panel_view;
         let selected = s.selected;
@@ -609,10 +603,26 @@ impl App {
         let row_h = 30.0;
         let top = inner.top() + 58.0;
         let footer_h = if pv.node == t.root && matches!(s.target, Target::Volume(_)) { 64.0 } else { 26.0 };
-        let avail = inner.bottom() - footer_h - top;
+        let list_bottom = inner.bottom() - footer_h;
+        let avail = (list_bottom - top).max(row_h);
         let max_rows = ((avail / row_h).floor() as usize).max(1);
-        let overflow = kids.len() > max_rows;
-        let show = if overflow { max_rows - 1 } else { kids.len() };
+        let n_kids = kids.len();
+        let overflow = n_kids > max_rows;
+        // Collapsed (like Suggestions): reserve the last row for "N more items…".
+        // Expanded: all children render, and the list scrolls.
+        let expanded = list_expanded0;
+        let show = if overflow && !expanded { max_rows - 1 } else { n_kids };
+        let scrolling = expanded && overflow;
+        let total_h = show as f32 * row_h;
+        let max_scroll = (total_h - avail).max(0.0);
+        let mut scroll = list_scroll0.clamp(0.0, max_scroll);
+        let list_clip = Rect::from_min_max(Pos2::new(inner.left(), top), Pos2::new(inner.right(), list_bottom));
+        if scrolling && self.modal.is_none() && ui.rect_contains_pointer(list_clip) {
+            let d = ui.input(|i| i.smooth_scroll_delta.y);
+            if d != 0.0 {
+                scroll = (scroll - d).clamp(0.0, max_scroll);
+            }
+        }
         struct Row {
             node: u32,
             label: String,
@@ -633,9 +643,9 @@ impl App {
                 Row { node: c, label: node_label(&t, c), size: n.size, color, kind: n.kind, denied: n.denied(), collected: s.is_collected(&t, c) }
             })
             .collect();
-        let more = if overflow {
+        let more = if overflow && !expanded {
             let rest: u64 = kids[show..].iter().map(|c| t.get(*c).size).sum();
-            Some((kids.len() - show, rest, View { node: pv.node, skip: pv.skip + show }))
+            Some((n_kids - show, rest))
         } else {
             None
         };
@@ -645,8 +655,17 @@ impl App {
 
         let mut new_hover = None;
         let mut action: Option<(u32, Kind, u8)> = None; // 0 click, 1 double, 2 context
+        let mut expand = false;
+        let prev_clip = ui.clip_rect();
+        if scrolling {
+            ui.set_clip_rect(list_clip);
+        }
         for (k, r) in rows.iter().enumerate() {
-            let rr = Rect::from_min_size(Pos2::new(inner.left() - 8.0, top + k as f32 * row_h), Vec2::new(inner.width() + 16.0, row_h - 2.0));
+            let y = top + k as f32 * row_h - scroll;
+            if scrolling && (y + row_h < top || y > list_bottom) {
+                continue;
+            }
+            let rr = Rect::from_min_size(Pos2::new(inner.left() - 8.0, y), Vec2::new(inner.width() + 16.0, row_h - 2.0));
             let id = Id::new(("row", si, r.node));
             let resp = ui.interact(rr, id, Sense::click_and_drag());
             let hl = resp.hovered() || selected == Some(r.node);
@@ -695,19 +714,35 @@ impl App {
                 action = Some((r.node, r.kind, 2));
             }
         }
-        if let Some((n, rest, v)) = more {
+        if scrolling {
+            ui.set_clip_rect(prev_clip);
+        }
+        if let Some((n, rest)) = more {
             let rr = Rect::from_min_size(Pos2::new(inner.left() - 8.0, top + show as f32 * row_h), Vec2::new(inner.width() + 16.0, row_h - 2.0));
             let id = Id::new(("row-more", si));
             let resp = ui.interact(rr, id, Sense::click());
             let h = ui.ctx().animate_bool_with_time(id.with("h"), resp.hovered(), 0.1);
+            if resp.hovered() {
+                ui.ctx().set_cursor_icon(egui::CursorIcon::PointingHand);
+            }
             let p = ui.painter();
             p.rect_filled(rr, cr(8.0), with_alpha(theme.surface_hi, h));
             p.text(Pos2::new(rr.left() + 30.0, rr.center().y), Align2::LEFT_CENTER, trf("{count} more items…", &[("count", &fmt_count(n as u64))]), font(13.0), theme.text_dim);
             p.text(Pos2::new(rr.right() - 12.0, rr.center().y), Align2::RIGHT_CENTER, fmt_size(rest), bold(12.5), theme.text_dim);
             if resp.clicked() {
-                self.sessions[si].navigate(v);
-                self.sfx(Sfx::Blip);
+                expand = true;
             }
+        }
+        // Scrollbar, only when expanded and the list overflows.
+        if scrolling && max_scroll > 0.5 {
+            let track_h = list_bottom - top;
+            let thumb_h = (track_h * avail / total_h).max(30.0);
+            let ty = top + (track_h - thumb_h) * (scroll / max_scroll);
+            let track = Rect::from_min_size(Pos2::new(inner.right() + 9.0, top + 2.0), Vec2::new(3.0, track_h - 4.0));
+            let thumb = Rect::from_min_size(Pos2::new(track.left(), ty), Vec2::new(track.width(), thumb_h));
+            let p = ui.painter();
+            let hov = ui.rect_contains_pointer(track.expand2(Vec2::new(6.0, 0.0)));
+            p.rect_filled(thumb, cr(2.0), lerp_color(with_alpha(theme.text_faint, 0.5), theme.text_dim, if hov { 1.0 } else { 0.0 }));
         }
         if rows.is_empty() {
             let p = ui.painter();
@@ -736,6 +771,12 @@ impl App {
 
         let s = &mut self.sessions[si];
         s.list_hover = new_hover;
+        if expand {
+            s.list_expanded = true;
+            s.list_scroll = 0.0;
+        } else {
+            s.list_scroll = scroll;
+        }
         if let Some((node, kind, how)) = action {
             match (how, kind) {
                 (2, _) => {
@@ -776,15 +817,15 @@ impl App {
         let reclaim: u64 = rows.iter().map(|r| r.size).sum();
 
         let cloud_running = self.sessions[si].analysis.is_cloud_running();
-        let cloud_error = self.sessions[si].analysis.cloud_error();
         let ai_on = self.settings.ai_cloud;
 
-        // header
+        // header (mirrors the Contents panel: big title on the left, a control
+        // flush right on the same line, a faint subtitle underneath)
         let (ai_label, ai_w) = if ai_on { (tr("Run AI analysis"), 140.0) } else { (tr("Enable AI"), 96.0) };
         {
             let p = ui.painter();
-            let title = widgets::truncate(p, tr("Cleanup suggestions"), &display(18.0), inner.width() - ai_w - 12.0);
-            p.text(inner.left_top() + Vec2::new(0.0, 2.0), Align2::LEFT_TOP, title, display(18.0), theme.text);
+            let title = widgets::truncate(p, tr("Cleanup suggestions"), &display(20.0), inner.width() - ai_w - 12.0);
+            p.text(inner.left_top() + Vec2::new(0.0, 1.0), Align2::LEFT_TOP, title, display(20.0), theme.text);
             let sub = if cloud_running {
                 tr("Analyzing with AI…").to_string()
             } else if rows.is_empty() {
@@ -800,7 +841,7 @@ impl App {
             };
             p.text(inner.left_top() + Vec2::new(0.0, 32.0), Align2::LEFT_TOP, sub, font(12.0), theme.text_faint);
         }
-        let ai_rect = Rect::from_min_size(Pos2::new(inner.right() - ai_w, inner.top()), Vec2::new(ai_w, 26.0));
+        let ai_rect = Rect::from_min_size(Pos2::new(inner.right() - ai_w, inner.top() + 1.0), Vec2::new(ai_w, 26.0));
         let ai_style = if ai_on { BtnStyle::Subtle } else { BtnStyle::Ghost };
         if widgets::button_ex(ui, ai_rect, Id::new(("sug-ai", si)), ai_label, Some(Icon::Bolt), ai_style, &theme, is_local && !cloud_running).clicked() {
             if ai_on {
@@ -818,21 +859,48 @@ impl App {
 
         let row_h = 34.0;
         let top = inner.top() + 58.0;
-        let footer_h = 56.0;
-        let avail = inner.bottom() - footer_h - top;
+        let footer_h = 44.0;
+        let list_bottom = inner.bottom() - footer_h;
+        let avail = (list_bottom - top).max(row_h);
         let max_rows = ((avail / row_h).floor() as usize).max(1);
-        let show = rows.len().min(max_rows);
+        let overflow = rows.len() > max_rows;
+        let expanded = self.sessions[si].sug_expanded;
+        // Collapsed (like the Contents panel): reserve the last row for the
+        // "N more items…" button. Expanded: the whole list scrolls.
+        let show = if overflow && !expanded { max_rows - 1 } else { rows.len() };
+        let total_h = show as f32 * row_h;
+        let max_scroll = (total_h - avail).max(0.0);
+
+        // Wheel over the list scrolls through the suggestions (expanded only);
+        // the chart keeps the wheel everywhere else.
+        let list_clip = Rect::from_min_max(Pos2::new(inner.left(), top), Pos2::new(inner.right(), list_bottom));
+        let scrolling = expanded && overflow;
+        if scrolling && self.modal.is_none() && ui.rect_contains_pointer(list_clip) {
+            let d = ui.input(|i| i.smooth_scroll_delta.y);
+            if d != 0.0 {
+                self.sessions[si].sug_scroll = (self.sessions[si].sug_scroll - d).clamp(0.0, max_scroll);
+            }
+        }
+        self.sessions[si].sug_scroll = self.sessions[si].sug_scroll.clamp(0.0, max_scroll);
+        let scroll = if scrolling { self.sessions[si].sug_scroll } else { 0.0 };
 
         let mut action: Option<u32> = None;
-        let mut hover: Option<String> = None;
-        for (k, r) in rows.iter().take(show).enumerate() {
-            let rr = Rect::from_min_size(Pos2::new(inner.left() - 8.0, top + k as f32 * row_h), Vec2::new(inner.width() + 16.0, row_h - 2.0));
+        let mut expand_more = false;
+        let prev_clip = ui.clip_rect();
+        if scrolling {
+            ui.set_clip_rect(list_clip);
+        }
+        for (idx, r) in rows.iter().take(show).enumerate() {
+            let y = top + idx as f32 * row_h - scroll;
+            if scrolling && (y + row_h < top || y > list_bottom) {
+                continue;
+            }
+            let rr = Rect::from_min_size(Pos2::new(inner.left() - 8.0, y), Vec2::new(inner.width() + 16.0, row_h - 2.0));
             let id = Id::new(("sug", si, r.node));
             let resp = ui.interact(rr, id, Sense::click());
             let h = ui.ctx().animate_bool_with_time(id.with("h"), resp.hovered(), 0.1);
             if resp.hovered() {
                 ui.ctx().set_cursor_icon(egui::CursorIcon::PointingHand);
-                hover = Some(format!("{} · {}% · {}", tr(r.category.label_key()), r.confidence, rationale_text(r)));
             }
             let p = ui.painter();
             if h > 0.0 {
@@ -841,14 +909,14 @@ impl App {
             let color = category_color(r.category, &theme);
             let dot = Pos2::new(rr.left() + 16.0, rr.center().y - 1.0);
             p.circle_filled(dot, 5.0 + h, color);
-            let name = r.path.rsplit(|c| c == '/' || c == '\\').next().unwrap_or(&r.path);
+            let name = r.path.rsplit(['/', '\\']).next().unwrap_or(&r.path);
             let sz = fmt_size(r.size);
             let sw = p.layout_no_wrap(sz.clone(), bold(12.5), theme.text).size().x;
             let lw = rr.width() - 44.0 - sw - 12.0;
             let lbl = widgets::truncate(p, name, &font(13.0), lw);
-            let tc = if collected[k] { theme.text_faint } else { theme.text };
+            let tc = if collected[idx] { theme.text_faint } else { theme.text };
             p.text(Pos2::new(rr.left() + 30.0, rr.center().y - 1.0), Align2::LEFT_CENTER, lbl, font(13.0), tc);
-            if collected[k] {
+            if collected[idx] {
                 widgets::draw_icon(p, Icon::Acorn, Rect::from_center_size(Pos2::new(rr.right() - 16.0 - sw - 14.0, rr.center().y - 1.0), Vec2::splat(12.0)), theme.warn);
             }
             if r.source == Src::Cloud {
@@ -859,38 +927,73 @@ impl App {
                 action = Some(r.node);
             }
         }
+        if scrolling {
+            ui.set_clip_rect(prev_clip);
+        }
 
-        // footer: hover info / reclaimable total on its own row, the actions
-        // aligned on the row below ("Collect all" flush right, next to the
-        // stale-only "Re-analyze").
+        // "N more items…" row (collapsed overflow), mirroring the Contents panel.
+        if overflow && !expanded {
+            let rr = Rect::from_min_size(Pos2::new(inner.left() - 8.0, top + show as f32 * row_h), Vec2::new(inner.width() + 16.0, row_h - 2.0));
+            let id = Id::new(("sug-more", si));
+            let resp = ui.interact(rr, id, Sense::click());
+            let h = ui.ctx().animate_bool_with_time(id.with("h"), resp.hovered(), 0.1);
+            if resp.hovered() {
+                ui.ctx().set_cursor_icon(egui::CursorIcon::PointingHand);
+            }
+            let p = ui.painter();
+            p.rect_filled(rr, cr(8.0), with_alpha(theme.surface_hi, h));
+            p.text(Pos2::new(rr.left() + 30.0, rr.center().y), Align2::LEFT_CENTER, trf("{count} more items…", &[("count", &fmt_count((rows.len() - show) as u64))]), font(13.0), theme.text_dim);
+            let rest: u64 = rows[show..].iter().map(|r| r.size).sum();
+            p.text(Pos2::new(rr.right() - 12.0, rr.center().y), Align2::RIGHT_CENTER, fmt_size(rest), bold(12.5), theme.text_dim);
+            if resp.clicked() {
+                expand_more = true;
+            }
+        }
+        if expand_more {
+            self.sessions[si].sug_expanded = true;
+            self.sessions[si].sug_scroll = 0.0;
+            self.sfx(Sfx::Blip);
+        }
+
+        // Scrollbar, only when expanded and the list overflows.
+        if scrolling && max_scroll > 0.5 {
+            let track_h = list_bottom - top;
+            let thumb_h = (track_h * avail / total_h).max(30.0);
+            let ty = top + (track_h - thumb_h) * (scroll / max_scroll);
+            let track = Rect::from_min_size(Pos2::new(inner.right() + 9.0, top + 2.0), Vec2::new(3.0, track_h - 4.0));
+            let thumb = Rect::from_min_size(Pos2::new(track.left(), ty), Vec2::new(track.width(), thumb_h));
+            let p = ui.painter();
+            let hov = ui.rect_contains_pointer(track.expand2(Vec2::new(6.0, 0.0)));
+            p.rect_filled(thumb, cr(2.0), lerp_color(with_alpha(theme.text_faint, 0.5), theme.text_dim, if hov { 1.0 } else { 0.0 }));
+        }
+
+        // footer: just the actions, no info line. When a re-analyze is offered
+        // the two buttons share the width equally; otherwise "Collect all"
+        // takes it all. Both are the same height.
         {
             let p = ui.painter();
-            let fy = inner.bottom() - footer_h + 8.0;
-            p.line_segment([Pos2::new(inner.left(), fy - 6.0), Pos2::new(inner.right(), fy - 6.0)], Stroke::new(1.0, with_alpha(theme.stroke, 0.7)));
-            let info = if let Some(text) = hover {
-                text
-            } else if let Some(e) = &cloud_error {
-                e.clone()
-            } else if stale {
-                tr("The folder changed — suggestions may be out of date").to_string()
-            } else if !rows.is_empty() {
-                trf("Reclaimable: {size}", &[("size", &fmt_size(reclaim))])
-            } else {
-                String::new()
-            };
-            let info = widgets::truncate(p, &info, &font(11.0), inner.width());
-            p.text(Pos2::new(inner.left(), fy + 12.0), Align2::LEFT_CENTER, info, font(11.0), theme.text_faint);
+            let fy = inner.bottom() - footer_h + 2.0;
+            p.line_segment([Pos2::new(inner.left(), fy), Pos2::new(inner.right(), fy)], Stroke::new(1.0, with_alpha(theme.stroke, 0.7)));
         }
-        let btn = Rect::from_min_size(Pos2::new(inner.right() - 116.0, inner.bottom() - 32.0), Vec2::new(116.0, 30.0));
+        let btn_h = 30.0;
+        let by = inner.bottom() - btn_h;
         let any_bulk = rows.iter().any(|r| r.is_safe_bulk());
-        if widgets::button_ex(ui, btn, Id::new(("sug-all", si)), tr("Collect all"), Some(Icon::Plus), BtnStyle::Primary, &theme, any_bulk).clicked() {
-            self.collect_all_safe(si);
-        }
         if stale {
-            let rb = Rect::from_min_size(Pos2::new(inner.left(), inner.bottom() - 26.0), Vec2::new(150.0, 24.0));
+            let gap = 10.0;
+            let bw = (inner.width() - gap) / 2.0;
+            let rb = Rect::from_min_size(Pos2::new(inner.left(), by), Vec2::new(bw, btn_h));
+            let btn = Rect::from_min_size(Pos2::new(inner.right() - bw, by), Vec2::new(bw, btn_h));
             if widgets::button_ex(ui, rb, Id::new(("sug-redo", si)), tr("Re-analyze"), Some(Icon::Refresh), BtnStyle::Ghost, &theme, !running).clicked() {
                 self.sessions[si].analysis.clear();
                 self.start_analysis(si, ui.ctx());
+            }
+            if widgets::button_ex(ui, btn, Id::new(("sug-all", si)), tr("Collect all"), Some(Icon::Plus), BtnStyle::Primary, &theme, any_bulk).clicked() {
+                self.collect_all_safe(si);
+            }
+        } else {
+            let btn = Rect::from_min_size(Pos2::new(inner.left(), by), Vec2::new(inner.width(), btn_h));
+            if widgets::button_ex(ui, btn, Id::new(("sug-all", si)), tr("Collect all"), Some(Icon::Plus), BtnStyle::Primary, &theme, any_bulk).clicked() {
+                self.collect_all_safe(si);
             }
         }
         if let Some(node) = action {

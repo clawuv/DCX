@@ -61,6 +61,16 @@ pub struct Session {
     pub analysis: Analysis,
     /// Which side-panel tab is open (contents list vs. suggestions).
     pub panel_tab: PanelTab,
+    /// Scroll offset (points) of the suggestions list, which is taller than the panel.
+    pub sug_scroll: f32,
+    /// Whether the suggestions list is expanded to show all (else it collapses
+    /// to a "N more items…" row, like the Contents panel).
+    pub sug_expanded: bool,
+    /// Scroll offset (points) of the Contents list when expanded past its fit.
+    pub list_scroll: f32,
+    /// Whether the Contents list is expanded to show all children (with a
+    /// scrollbar), else it collapses to a "N more items…" row.
+    pub list_expanded: bool,
     /// Node whose content is shown in the side panel.
     pub panel_view: View,
     pub hovered_key: Option<u64>,
@@ -116,6 +126,10 @@ impl Session {
             collector: Vec::new(),
             analysis: Analysis::default(),
             panel_tab: PanelTab::Contents,
+            sug_scroll: 0.0,
+            sug_expanded: false,
+            list_scroll: 0.0,
+            list_expanded: false,
             panel_view: root,
             hovered_key: None,
             list_hover: None,
@@ -153,6 +167,8 @@ impl Session {
             self.fwd.clear();
             self.view = v;
             self.panel_view = v;
+            self.list_expanded = false;
+            self.list_scroll = 0.0;
         }
     }
 
@@ -161,6 +177,8 @@ impl Session {
             self.fwd.push(self.view);
             self.view = v;
             self.panel_view = v;
+            self.list_expanded = false;
+            self.list_scroll = 0.0;
             true
         } else {
             false
@@ -172,6 +190,8 @@ impl Session {
             self.back.push(self.view);
             self.view = v;
             self.panel_view = v;
+            self.list_expanded = false;
+            self.list_scroll = 0.0;
             true
         } else {
             false

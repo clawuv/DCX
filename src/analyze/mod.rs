@@ -77,7 +77,9 @@ pub enum Src {
     Cloud,
 }
 
-/// A suggestion's explanation.
+/// A suggestion's explanation. Kept on the model for tests and any future
+/// surfacing; the panel now shows only names/sizes, so the UI doesn't read it.
+#[allow(dead_code)]
 #[derive(Clone, Debug)]
 pub enum Rationale {
     /// i18n key (English source string), translated for display.
@@ -97,6 +99,7 @@ pub struct Suggestion {
     pub category: Category,
     /// 0–100; low-confidence items are shown but not bulk-collected.
     pub confidence: u8,
+    #[allow(dead_code)]
     pub rationale: Rationale,
     /// Safety verdict from [`crate::safety::Rules`].
     pub verdict: Verdict,
@@ -169,6 +172,7 @@ impl Analysis {
         self.cloud_running.store(false, Ordering::Relaxed);
     }
 
+    #[allow(dead_code)]
     pub fn cloud_error(&self) -> Option<String> {
         self.cloud_error.lock().unwrap().clone()
     }
