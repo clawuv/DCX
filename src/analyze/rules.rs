@@ -4,7 +4,7 @@
 //! scan, plus their sizes. File contents are never read.
 
 use super::{Category, Rationale, Suggestion, Src};
-use crate::safety::Rules;
+use crate::safety::{Os, Rules};
 use crate::tree::{Kind, Tree, NONE};
 
 /// Tunables for a run.
@@ -81,8 +81,7 @@ fn classify(name: &str) -> Option<(&'static str, Category, u8)> {
 }
 
 /// Walks `tree` and returns the cleanup suggestions, biggest first.
-pub fn analyze(tree: &Tree, limits: &Limits) -> Vec<Suggestion> {
-    let rules = Rules::current();
+pub fn analyze(tree: &Tree, limits: &Limits, rules: &Rules) -> Vec<Suggestion> {
     let mut out: Vec<Suggestion> = Vec::new();
     // DFS carrying which categories an ancestor already claimed, so nested
     // markers (`node_modules` inside `node_modules`) are counted once.
@@ -132,7 +131,9 @@ mod tests {
     const GB: u64 = 1_000_000_000;
 
     fn suggestions(tree: &Tree) -> Vec<Suggestion> {
-        analyze(tree, &Limits::default())
+        // fixed ruleset: the fixture trees use POSIX paths ("/System", "/r"),
+        // which only mean something under the Mac/Linux rulesets
+        analyze(tree, &Limits::default(), &Rules::for_os(Os::Mac, None))
     }
 
     #[test]

@@ -41,7 +41,7 @@ fn default_confidence() -> u8 {
 }
 
 /// Runs a cloud analysis. Blocking; call from a worker thread.
-pub fn analyze(tree: &Tree, prepared: &Prepared, ep: &Endpoint) -> Result<Vec<Suggestion>, String> {
+pub fn analyze(tree: &Tree, prepared: &Prepared, ep: &Endpoint, rules: &Rules) -> Result<Vec<Suggestion>, String> {
     let url = ep.url.trim();
     if url.is_empty() {
         return Err("No analysis service is configured".to_string());
@@ -58,12 +58,11 @@ pub fn analyze(tree: &Tree, prepared: &Prepared, ep: &Endpoint) -> Result<Vec<Su
         .body_mut()
         .read_json()
         .map_err(|e| format!("The analysis service sent an unexpected response ({e})"))?;
-    Ok(map_response(tree, prepared, parsed))
+    Ok(map_response(tree, prepared, parsed, rules))
 }
 
 /// Turns a parsed response into suggestions, re-applying the safety gate.
-fn map_response(tree: &Tree, prepared: &Prepared, resp: Response) -> Vec<Suggestion> {
-    let rules = Rules::current();
+fn map_response(tree: &Tree, prepared: &Prepared, resp: Response, rules: &Rules) -> Vec<Suggestion> {
     let mut out = Vec::new();
     for it in resp.suggestions {
         let Some(&node) = prepared.nodes.get(it.idx) else { continue };
@@ -109,9 +108,11 @@ fn readable(e: ureq::Error) -> String {
 mod tests {
     use super::*;
     use crate::analyze::payload::{self, Limits};
+    use crate::safety::{Os, Rules};
     use crate::tree::{Kind, Source};
 
-    fn sample() -> (Tree, Prepared) {
+    fn sample() -> (Tree, Prepared, Rules) {
+        let rules = Rules::for_os(Os::Mac, None);
         let mut t = Tree::new("/r", "r", Source::Local);
         let nm = t.add_child(0, "node_modules", Kind::Dir, 0, 0);
         t.add_child_sized(nm, "big.bin", Kind::File, 5_000_000, 1);
@@ -119,12 +120,12 @@ mod tests {
         t.add_child_sized(caches, "c", Kind::File, 3_000_000, 1);
         let limits = Limits { min_size: 1, max_depth: 4, max_nodes: 100, max_exts: 10 };
         let prepared = payload::build(&t, &limits);
-        (t, prepared)
+        (t, prepared, rules)
     }
 
     #[test]
     fn maps_cloud_response_to_suggestions() {
-        let (t, prepared) = sample();
+        let (t, prepared, rules) = sample();
         let resp: Response = serde_json::from_str(
             r#"{"suggestions":[
                 {"idx":0,"category":"node_modules","confidence":92,"rationale":"Leftover dependencies"},
@@ -133,7 +134,7 @@ mod tests {
             ]}"#,
         )
         .unwrap();
-        let got = map_response(&t, &prepared, resp);
+        let got = map_response(&t, &prepared, resp, &rules);
         assert_eq!(got.len(), 1);
         assert_eq!(got[0].source, Src::Cloud);
         assert_eq!(got[0].category, Category::NodeModules);
@@ -143,20 +144,21 @@ mod tests {
 
     #[test]
     fn cloud_results_pass_the_safety_gate() {
+        let rules = Rules::for_os(Os::Mac, None);
         let mut t = Tree::new("/System", "System", Source::Local);
         let lib = t.add_child(0, "Library", Kind::Dir, 0, 0);
         t.add_child_sized(lib, "x", Kind::File, 5_000_000, 1);
         let limits = Limits { min_size: 1, max_depth: 4, max_nodes: 100, max_exts: 10 };
         let prepared = payload::build(&t, &limits);
         let resp: Response = serde_json::from_str(r#"{"suggestions":[{"idx":0,"category":"cache","confidence":90}]}"#).unwrap();
-        assert!(map_response(&t, &prepared, resp).is_empty(), "protected paths must be filtered");
+        assert!(map_response(&t, &prepared, resp, &rules).is_empty(), "protected paths must be filtered");
     }
 
     #[test]
     fn empty_rationale_falls_back_to_the_category_label() {
-        let (t, prepared) = sample();
+        let (t, prepared, rules) = sample();
         let resp: Response = serde_json::from_str(r#"{"suggestions":[{"idx":0,"category":"cache","confidence":70}]}"#).unwrap();
-        let got = map_response(&t, &prepared, resp);
+        let got = map_response(&t, &prepared, resp, &rules);
         assert_eq!(got.len(), 1);
         assert!(matches!(got[0].rationale, Rationale::Key(_)));
     }

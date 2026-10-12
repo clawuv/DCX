@@ -855,7 +855,7 @@ impl App {
             .spawn(move || {
                 let (list, version) = {
                     let t = tree.read().unwrap();
-                    (rules::analyze(&t, &limits), t.version)
+                    (rules::analyze(&t, &limits, &crate::safety::Rules::current()), t.version)
                 };
                 analysis.finish(list, version);
                 ctx.request_repaint();
@@ -891,7 +891,7 @@ impl App {
                 };
                 let res = {
                     let t = tree.read().unwrap();
-                    crate::analyze::cloud::analyze(&t, &prepared, &ep)
+                    crate::analyze::cloud::analyze(&t, &prepared, &ep, &crate::safety::Rules::current())
                 };
                 match res {
                     Ok(list) => analysis.cloud_finish(list),
