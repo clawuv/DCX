@@ -971,6 +971,7 @@ impl eframe::App for App {
                 super::macos::shift_traffic_lights(frame, dx, dy);
             }
         }
+        #[cfg(target_os = "macos")]
         if let Some((cy, cx, _)) = super::macos::traffic_lights(frame) {
             self.chrome = (cy, cx);
         }

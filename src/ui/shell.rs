@@ -7,7 +7,7 @@ use super::theme::{lerp_color, with_alpha};
 use super::widgets::{self, bold, cr, Icon};
 use crate::i18n::tr;
 use crate::sound::Sfx;
-use eframe::egui::{self, Align2, Color32, Id, Pos2, Rect, Sense, Ui, Vec2};
+use eframe::egui::{self, Align2, Color32, Id, Pos2, Rect, Sense, Stroke, Ui, Vec2};
 use std::sync::atomic::Ordering;
 
 pub const SIDEBAR_W: f32 = 204.0;
